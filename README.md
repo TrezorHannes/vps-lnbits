@@ -195,31 +195,37 @@ We switch Terminal windows again, going back to your LND Node. A quick disclaime
 
 Be very cautious with your `lnd.conf`. Make a backup before with `cp /mnt/hdd/lnd/lnd.conf /mnt/hdd/lnd/lnd.bak` so you can rever back when things don't work out. 
 The brackets below indicate the section where each line needs to be added to. Don't place anything anywhere else, as it will cause your LND constrain from starting properly.
-_Adjust ports and IPs accordingly_
 
-#### Raspiblitz
+_Adjust ports and IPs accordingly!_
 
+<details><summary>Click here to expand Raspiblitz / Raspibolt settings</summary>
+<p>
 LND.conf adjustments, open with `sudo nano /mnt/hdd/lnd/lnd.conf`
 
-[Application Options]
- - [ ] `externalip=207.154.241.207:9735`           # to add your VPS Public-IP
- - [ ] `nat=false`                                 # deactivate NAT
- - [ ] `tlsextraip=172.17.0.2`                     # allow later LNbits-access to your rest-wallet API
+[**Application Options**]
+| Command | Description |
+| --- | --- |
+| `externalip=207.154.241.207:9735`           | # to add your VPS Public-IP |
+| `nat=false`                                 | # deactivate NAT |
+| `tlsextraip=172.17.0.2`                     | # allow later LNbits-access to your rest-wallet API |
 
-[tor]
-
- - [ ] `tor.active=true`                           # ensure Tor is active
- - [ ] `tor.v3=true`                               # with the latest version. v2 is going to be deprecated this summer
- - [ ] `tor.streamisolation=false`                 # this needs to be false, otherwise hybrid mode doesn't work
- - [ ] `tor.skip-proxy-for-clearnet-targets=true`  # activate hybrid mode
+[**tor**]
+| Command | Description |
+| --- | --- |
+| `tor.active=true`                           | # ensure Tor is active |
+| `tor.v3=true`                               | # with the latest version. v2 is going to be deprecated this summer |
+| `tor.streamisolation=false`                 | # this needs to be false, otherwise hybrid mode doesn't work |
+| `tor.skip-proxy-for-clearnet-targets=true`  | # activate hybrid mode |
 
 `CTRL-X` => `Yes` => `Enter` to save
 
 RASPIBLITZ CONFIG FILE
 `sudo nano /mnt/hdd/raspiblitz/conf` since Raspiblitz has some LND pre-check scripts which otherwise overwrite your settings.
- - [ ] `publicIP='207.154.241.207'`                # add your VPS Public-IP
- - [ ] `lndPort='9735'`                            # define the LND port
- - [ ] `lndAddress='207.154.241.207'`              # define your LND public IP address
+| Command | Description |
+| --- | --- |
+| `publicIP='207.154.241.207'`                | # add your VPS Public-IP |
+| `lndPort='9735'`                            | # define the LND port |
+| `lndAddress='207.154.241.207'`              | # define your LND public IP address |
 
 `CTRL-X` => `Yes` => `Enter` to save
 
@@ -236,22 +242,34 @@ LND Systemd Startup adjustment
         "03502e39bb6ebfacf4457da9ef84cf727fbfa37efc7cd255b088de426aa7ccb004@vsryyejeizfx4vylexg3qvbtwlecbbtdgh6cka72gnzv5tnvshypyvqd.onion:9735"
 ```        
  - [ ] Restart your LND Node with `sudo reboot`
+</p>
+</details>
 
-#### Umbrel
+<details><summary>Click here to expand Umbrel / Citadel settings</summary>
+<p>
 <!-- Add further comments for Umbrel and validate how to adjust starting LND docker with those changes, and making them persistent -->
 LND.conf adjustments, open with `sudo nano /home/umbrel/umbrel/lnd/lnd.conf`
 
-[Application Options]
- - [ ] `externalip=207.154.241.207:9735`           # to add your VPS Public-IP
- - [ ] `nat=false`                                 # deactivate NAT
- - [ ] `tlsextraip=172.17.0.2`                     # allow later LNbits-access to your rest-wallet API
+   
+| Command | Description |
+| --- | --- |
+| git status | List all new or modified files |
+| git diff | Show file differences that haven't been staged |
+   
+[**Application Options**]
+| Command | Description |
+| --- | --- |
+| `externalip=207.154.241.207:9735` | # to add your VPS Public-IP | 
+| `nat=false`                       | # deactivate NAT | 
+| `tlsextraip=172.17.0.2`           | # allow later LNbits-access to your rest-wallet API | 
 
-[tor]
-
- - [ ] `tor.active=true`                           # ensure Tor is active
- - [ ] `tor.v3=true`                               # with the latest version. v2 is going to be deprecated this summer
- - [ ] `tor.streamisolation=false`                 # this needs to be false, otherwise hybrid mode doesn't work
- - [ ] `tor.skip-proxy-for-clearnet-targets=true`  # activate hybrid mode
+[**tor**]
+| Command | Description |
+| --- | --- |
+| `tor.active=true`                          | # ensure Tor is active | 
+| `tor.v3=true`                              | # with the latest version. v2 is going to be deprecated this summer | 
+| `tor.streamisolation=false`                | # this needs to be false, otherwise hybrid mode doesn't work | 
+| `tor.skip-proxy-for-clearnet-targets=true` | # activate hybrid mode | 
 
 `CTRL-X` => `Yes` => `Enter` to save
 
@@ -266,6 +284,8 @@ LND Restart to incorporate changes to `lnd.conf`:
  - [ ] Restart your LND Node with `sudo reboot`
 
 **Warning**: This guide did not verify yet, if and how the docker LND service on Umbrel & Citadel needs to be adjusted to channel clearnet packets via tunnel. We will add peer-reviewed adjustments here from Umbrel / Citadel devs. Until then, consider this highly experimental, it might fail.
+</p>
+</details>
 
 ### 10) LND Node: Start your VPN Client again
 The reboot killed your tmux session running the OpenVPN client. Remember it from [section 7)](https://github.com/TrezorHannes/vps-lnbits/edit/main/README.md#7-install-and-test-the-vpn-tunnel-on-your-lnd-node)? Here is how you restart it:
@@ -280,9 +300,14 @@ Additional hint: The author did not test the option to run the client automatica
 
 
 ### 11) LND Node: provide your VPS LNBits instance read / write access to your LND Wallet
-Another tricky piece is to respect the excellent security feats the LND engineering team has implemented. Since we don't want to rely on a custodial wallet provider, which would be super easy to add into LNBits, we have some more tinkering to do. Follow along to basically provide two things to your VPS from your LND Node:
- a) your tls.cert. Only with this, your VPS is going to be allowed to leverage your LND Wallet via Rest-API
- b) your admin.macaroon. Only with that, your VPS can send and receive payments
+Another tricky piece is to respect the excellent security feats the LND engineering team has implemented. Since we don't want to rely on a custodial wallet provider, which would be super easy to add into LNBits, we have some more tinkering to do. Follow along to basically provide two things to your VPS from your LND Node. 
+
+**Note of warning again**: Both of those files are highly sensitive. Don't show them to anyone, don't transfer them via Email, just follow the secure channel below and you should be fine, as long you keep the security barriers installed in [Section "Secure"](https://github.com/TrezorHannes/vps-lnbits/edit/main/README.md#secure) intact.
+
+1) your tls.cert. Only with this, your VPS is going to be allowed to leverage your LND Wallet via Rest-API
+`
+
+3) your admin.macaroon. Only with that, your VPS can send and receive payments
 
 
 ### 12) VPS: Customize and configure LNBits to connect to your LNDRestWallet
