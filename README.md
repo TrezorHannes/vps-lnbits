@@ -4,6 +4,7 @@ _Documentation how to setup LNbits on a VPS, connected to your Lightning Network
 Here's my current setup shared with you, and your intend can be manyfold, you may
 - have a dynamic IP from your Internet Service Provider
 - want to hide your home IP from the world, for whatever reason
+- desire to decrease your Lightning Node HTLC Routing times, so instead of running Tor only, you want Clearnet availability, too
 - want others to leverage the LN Services you want to offer, via LNBits, BTCPay or others
 - get a domain-name or use a free-domain host such as [DuckDNS](duckdns.org) to point to your LNBits instance
 - are just curious and want to tinker around a bit, because it's good to have those skills when demand for experience continues to rise
@@ -54,7 +55,7 @@ Suggested Laundry-List, you can tick them off while you go through this guide
 
 ### Visualize
 Some of us are visual people. Draw your diagram to get an idea how you want things to flow
-[![Hight-lvl-Flowchart](https://github.com/TrezorHannes/vps-lnbits/blob/main/High_levl-diagram.png)
+[![Hight-lvl-Flowchart](https://github.com/TrezorHannes/vps-lnbits/blob/main/Untitled%20Diagram.drawio.png?raw=true)
 
 ### Secure
 It goes without saying, but this guide doesn't go into the necessary security steps in detail, and can't take on liability for any things breaking or losing funds. Ensure you don't get reckless, start with small funds you're ok to lose. Keep an eye on developments or in touch with the active Telegram Groups, to get news and updates with low delays. Also, would recommend to do those steps with a peer, so you follow a second pair of eye review. Lastly, 2fa / yubikeys are your friends!
@@ -80,8 +81,8 @@ After a few magic cloud things happening, you have your Droplet initiated and it
 
 ### 3) Connect to your VPS and tighten it up
 Connect to your VPS via `SSH root@207.154.241.207` and you will be welcomed on your new, remote server. Next steps are critical to do right away, harden your setup:
-   - [ ] Update your packages: `apt-get update` and `sudo apt-get upgrade`
-   - [ ] Install Docker & Tmux: `apt-get install docker.io tmux`
+   - [ ] Update your packages: `apt-get update` and `apt-get upgrade`
+   - [ ] Install Docker: `apt-get install docker.io`
    - [ ] Enable Docker automated start: `systemctl start docker.service`
    - [ ] Enable Uncomplicated Firewall (UFW) and add ports to be allowed to connected to: 
 ```
@@ -111,9 +112,9 @@ Your OpenVPN Server is now running, which means the Internet can now connect to 
 
    - [ ] CONTAINER-ID: `docker ps` to list your docker container. In the first column, you will find the `CONTAINER-ID`, usually a cryptic 12-digit number/character combination. Copy into the clipboard and make a note of it. 
    - [ ] Docker Shell: Get into the container, with `docker exec -it <CONTAINER-ID> sh`. 
-   - [ ] VPS Docker IP: Run `ifconfig` and you typically find 3 devices listed with IPs assigned. Make a note of the one with eth0, which is your own **VPS Docker IP**: 172.0.0.2
+   - [ ] VPS Docker IP: Run `ifconfig` and you typically find 3 devices listed with IPs assigned. Make a note of the one with eth0, which is your own `VPS Docker IP: 172.0.0.2`. Type `exit` to get out of the docker-shell.
 
-### 5) Install LNBits on your VPSInstall LNBits on your VPS
+### 5) Install LNBits on your VPS
 Next we will install [LNBits](https://lnbits.com/) on this server, since it'll allow to keep your node independent and light-weight. It also allows to change nodes swiftly in-case you need to move things. We won't install it via Docker (like Umbrel does), but do the implementation based slightly on their [Github Installation Guide](https://github.com/lnbits/lnbits-legend/blob/main/docs/devs/installation.md). You can also follow their [own, excellent video walkthrough](https://youtu.be/WJRxJtYZAn4?t=49) here. Just don't use Ben's commands, since these are a little dated.
 Since we assume you have followed the hardening guide above to add additional users, we will now have to use `sudo` in our commands.
 ```
@@ -143,14 +144,81 @@ $ chmod 600 /home/admin/VPNcert/bringmesomesats.ovpn
 ```
 _Note: You need to adjust `user`, the **VPS Public IP** and the absolute directory where the ovpn file is stored. Also make sure you are concious where you place this file on your LND Node, because we need it later._
 
-So we have config file, secured in a directory, now we need to install OpenVPN and start it up to see if it works
-```
-$ sudo apt-get install openvpn tmux
-tmux sudo openvpn --config CERT.ovpn
+So we have config file, secured in a directory, now we need to install OpenVPN & Tmux, start it up to see if it works. Tmux is a program allowing you to run services in the background. So even once you close the terminal, your OpenVPN Client will continue to run the tunnel. Read about [Tmux short-cuts here](https://tmuxcheatsheet.com/), or use alternatives like [screen](https://linuxize.com/post/how-to-use-linux-screen/).
+
+**Important Warning**: Depending on your network-setup, there is a slight chance your LND Node Service gets interrupted. Be aware there might be small down-times of your lightning node, as we will reconfigure things. Be patient!
 
 ```
-### 7) Start and test the VPN Tunnel works on your LND Node
-N
+$ sudo apt-get install openvpn tmux
+$ tmux new -s vps
+$ sudo openvpn --config /home/admin/VPNcert/bringmesomesats.ovpn
+```
+You should see something similiar to the following output. Note this one line indicating the next important IP Adress `VPN Client IP: 192.168.255.6`. Make a note of it, we need it for port-configuration at the server, soon.
+```
+2022-03-02 17:38:10 library versions: OpenSSL 1.1.1k  25 Mar 2021, LZO 2.10
+2022-03-02 17:38:10 TCP/UDP: Preserving recently used remote address: [AF_INET]207.154.241.207:1194
+2022-03-02 17:38:10 UDP link local: (not bound)
+2022-03-02 17:38:10 UDP link remote: [AF_INET]207.154.241.207:1194
+2022-03-02 17:38:11 WARNING: 'link-mtu' is used inconsistently, local='link-mtu 1541', remote='link-mtu 1542'
+2022-03-02 17:38:11 WARNING: 'comp-lzo' is present in remote config but missing in local config, remote='comp-lzo'
+2022-03-02 17:38:11 [207.154.241.207] Peer Connection Initiated with [AF_INET]207.154.241.207:1194
+2022-03-02 17:38:12 Options error: Unrecognized option or missing or extra parameter(s) in [PUSH-OPTIONS]:1: block-outside-dns (2.5.1)
+2022-03-02 17:38:12 TUN/TAP device tun0 opened
+2022-03-02 17:38:12 net_iface_mtu_set: mtu 1500 for tun0
+2022-03-02 17:38:12 net_iface_up: set tun0 up
+2022-03-02 17:38:12 net_addr_ptp_v4_add: 192.168.255.6 peer 192.168.255.5 dev tun0
+2022-03-02 17:38:12 WARNING: this configuration may cache passwords in memory -- use the auth-nocache option to prevent this
+2022-03-02 17:38:12 Initialization Sequence Completed
+```
+The tunnel between your LND Node and your VPS VPN is established. We can place the VPN client into the background with `CTRL-B + CTRL-D`, which need to be pressed quickly after each other. You'll be out of the tmux session now, if you are curious if things still run, do `tmux a -t vps`, and do `CTRL-B + CTRL-D` to detach it again.
+
+
+### 8) VPS: Add routing tables configuration into your droplet docker
+Back to your terminal window connected to your VPS. We have the `VPN Client IP: 192.168.255.6` now, which we need to tell our VPS where it should route those packets to. To achieve that, we'll get back into the docker container and add IPTables rules.
+
+   - [ ] Remember how to get into the container? Arrow-up on your keyboard, or do `docker ps` and `docker exec -it <CONTAINER-ID> sh`
+   - [ ] Doublecheck your VPN Client IP, and adjust it in the following IPtables commands you enter into the container and confirm with Enter
+
+```
+$ iptables -A PREROUTING -t nat -i eth0 -p tcp -m tcp --dport 9735 -j DNAT --to 192.168.255.6:9735
+$ iptables -A PREROUTING -t nat -i eth0 -p udp -m udp --dport 9735 -j DNAT --to 192.168.255.6:9735
+$ iptables -A PREROUTING -t nat -i eth0 -p tcp -m tcp --dport 18080 -j DNAT --to 192.168.255.6:8080
+$ iptables -t nat -A POSTROUTING -d 192.168.255.0/24 -o tun0 -j MASQUERADE
+$ exit
+```
+What we basically do here, is assign a ruleset to say: As soon a packet arrives at device `eth0` on `port 9735/udp` and `/tcp`, forward it to the `VPN client` at `192.168.255.6:9735`, and vice versa everything at device `tun0`. If you have different ports or IPs, please make adjustments accordingly. What you also see, is a port `8080` preperation for LNBits packets, we'll get to this later.
+
+
+### 9) LND Node: LND adjustments to listen and channel via VPS VPN Tunnel
+We switch Terminal windows again, going back to your LND Node. A quick disclaimer again, since we are fortunate enough to have plenty of good LND node solutions out there, we cannot cater for every configuration out there. Feel free to leave comments or log issues if you get stuck for your node, we'll be looking at the two most different setups here. But this should work very similar on _MyNode_, _Raspibolt_ or _Citadel_.
+
+Be very cautious with your `lnd.conf`. Make a backup before with `cp /mnt/hdd/lnd/lnd.conf /mnt/hdd/lnd/lnd.bak` so you can rever back when things don't work out. 
+The brackets below indicate the section where each line needs to be added to. Don't place anything anywhere else, as it will cause your LND constrain from starting properly.
+
+#### Raspiblitz
+
+LND.conf adjustments, open with `sudo nano /mnt/hdd/lnd/lnd.conf`. 
+
+[Application Options]
+- [ ] `externalip=207.154.241.207:9735`
+- [ ] `nat=false`
+- [ ] `tlsextraip=172.17.0.2`
+
+[tor]
+- [ ] `tor.active=true`
+- [ ] `tor.v3=true`
+- [ ] `tor.streamisolation=false`
+- [ ] `tor.skip-proxy-for-clearnet-targets=true`
+
+RASPIBLITZ CONFIG FILE
+`sudo nano /mnt/hdd/raspiblitz/conf`
+- [ ] `publicIP='207.154.241.207'`
+- [ ] `lndPort='9735'`
+- [ ] `lndAddress='207.154.241.207'`
+
+_Adjust ports and IPs accordingly_
+
+#### Umbrel
 
 
 
