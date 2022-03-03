@@ -340,7 +340,7 @@ Worth noting, that the directory `data` will hold all your database SQLite3 file
  | `LNBITS_THEME_OPTIONS="classic, bitcoin, flamingo, mint, autumn, monochrome, salvador"` | Provide different color themes, or keep it simple |
  `CTRL-X` => `Yes` => `Enter` to save
  
- ### 12) Start LNBits and test the LND Node wallet connection
+ ### 12) VPS: Start LNBits and test the LND Node wallet connection
  As soon you got here, we got the most complex things done 💪. The next few steps will be a walk in the park. Get another beverage.
 ```
 $ tmux new -s lnbits
@@ -354,10 +354,39 @@ If you see your own LNBits instance, with all your _Optional Adjustments_ added,
 
 [^1]: To remove the ufw setting - we don't want to expose any unnecessary ports - call `sudo ufw status numbered`, followed by `sudo ufw delete #number` of the two port 8000 entries.
 
-### 13) Your domain and SSL setup
+### 13) Your domain, Webserver and SSL setup
+We don't want to share our IP-Adress for others to pay us, a domain name is a much better brand. And we want to keep it secure, so we need to get us an SSL certificate. Good for you, both options are available for free, just needs some further work.
 
+#### Domain
+While there are plenty of domain-name providers out there, we are going to use a free, easy and secure provider: [duckdns.org](https://www.duckdns.org/). They do their own elevator pitch why to use them on their site. Feel free to pick another, such as [Ahnames](https://ahnames.com/en), but this guide will use the former for simplicity
+   - [ ] make an account on DuckDNS with GH or Email
+   - [ ] add 1 of 5 free subdomains, eg. paymeinsats
+   - [ ] point this domain to your `VPS Public IP: 207.154.241.207`
+   - [ ] Make a note of your Token
 
- ## Appendix & FAQ
+Keep the site open, we'll need it soon
+
+#### VPS: Webserver & SSL certificate
+Uvicorn is working fine, but a robust solution, which is able to do some caching and better log-management is nginx (engine-x). We'll also use certbot to manage our SSL certificate management, even though LNBits recommends [caddy](https://caddyserver.com/docs/install#debian-ubuntu-raspbian). Use your own preference, we'll walk through certbot here:
+```
+$ sudo apt update
+$ sudo apt install nginx certbot
+$ sudo certbot certonly --manual --preferred-challenges dns
+```
+Next to a few other things, Certbot will ask you for your domain, so add your `paymeinsats.duckdns.org`. Then it'll prompt you to place a TXT record for \_acme-challenge.paymeinsats.duckdns.org, which is basically their way to verify whether you really own this domain. 
+To achieve this, leave the certbot alone without touching anything, and follow those steps in parallel:
+   - [ ] Open a text editor, and add this URL: `https://www.duckdns.org/update?domains={YOURVALUE}&token={YOURVALUE}&txt={YOURVALUE}[&verbose=true]`
+   - [ ] replace each variable[^2]
+     - `domains={YOURVALUE}` with your subdomain only, in our case `domains=paymeinsats̀
+     - `token={YOURVALUE}` with your token from your duckdns.org overview
+     - `txt={YOURVALUE}` with the random text-snippet certbot provided you to fill in
+     - optional: set `verbose=true` if you want 2 lines more info as a response
+   - [ ] Copy that whole string into a new Webbrowser window, and if verbose isn't set as true, it'll be as crisp as `OK`
+   - [ ] In a new Terminal window, install dig `sudo apt-get install dnsutils` to check if the world knows about you solved the challenge: `dig -t txt _acme-challenge.paymeinsats.duckdns.org`. Compare the TXT record entry with what Certbot provided you. If both are similar, confirm with `Enter` in the Certbot Terminal, so it can do it's own verification
+   - [ ] Once successful, you got your SSL certificates. Make a note in your calendar when the validation time is over, so you renew early enough.
+
+[^2]: [further details here](https://www.duckdns.org/spec.jsp)
+## Appendix & FAQ
 
 
 
