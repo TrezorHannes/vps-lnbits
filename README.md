@@ -67,7 +67,7 @@ Well, let's get into it, shall we?!
 ### 1) Lightning Node
 We will consider you have your **Lightning Node up and running**, connected via Tor and some funds on it. You also have SSH access to it and administrative privilidges
 
-### 2) VPS Setup 
+### 2) VPS: Setup 
 In case you don't have a **VPS provider** already, sign-up with [my referal](https://m.do.co/c/5742b053ef6d) or [pick another](https://www.vpsbenchmarks.com/best_vps/2022) which provides you with a static IP and cheap costs. Maybe you even prefer one payable with Lightning ⚡. In case you go for DigitalOcean, here are the steps to create a Droplet, shouldn't take longer than a few minutes:
    - [ ] add a new Droplet on the left hand navigation
    - [ ] chose an OS of your preference, I have Ubuntu 20.04 (LTS) x64
@@ -80,10 +80,10 @@ In case you don't have a **VPS provider** already, sign-up with [my referal](htt
 
 After a few magic cloud things happening, you have your Droplet initiated and it provides you with a public IPv4 Adress. Add it to your notes! In this guide, I'll refer to it as `VPS Public IP: 207.154.241.207`
 
-### 3) Connect to your VPS and tighten it up
+### 3) VPS: Connect to your VPS and tighten it up
 Connect to your VPS via `SSH root@207.154.241.207` and you will be welcomed on your new, remote server. Next steps are critical to do right away, harden your setup:
    - [ ] Update your packages: `apt-get update` and `apt-get upgrade`
-   - [ ] Install Docker: `apt-get install docker.io`
+   - [ ] Install Docker & tmux: `apt-get install docker.io tmux`
    - [ ] Enable Docker automated start: `systemctl start docker.service`
    - [ ] Enable Uncomplicated Firewall (UFW) and add ports to be allowed to connected to: 
 ```
@@ -99,23 +99,23 @@ $ ufw enable
    - [ ] Follow [further hardening steps](https://www.digitalocean.com/community/tutorials/initial-server-setup-with-ubuntu-18-04), eg setting up non-root users for additional security enhancements.
    - [ ] Install fail2ban to protect your SSH user, it runs automatically on it's own `sudo apt install fail2ban`
 
-### 4) Install OpenVPN Server on your VPS
+### 4) VPS: Install OpenVPN Server
 Now we will get OpenVPN installed, but using a Docker Setup like [Krypto4narchista](https://twitter.com/_pthomann) suggests [here](https://www.mobycrypt.com/turn-your-self-hosted-lightning-network-node-to-public-in-10-minutes/). It's easier to setup, but needs some tinkering with port forwarding, which we will go into in a bit.
    - [ ] `export OVPN_DATA="ovpn-data"` which sets a global-name placeholder for your VPN to be used for all the following commands. You can make this permanent by adding this to survive any reboot via `nano .bashrc`, add it to the very bottom => CTRL-X => Yes. 
    - [ ] `docker volume create --name $OVPN_DATA` notice how the $ indicates picking up the placeholder you have defined above
    - [ ] `docker run -v $OVPN_DATA:/etc/openvpn --rm kylemanna/openvpn ovpn_genconfig -u udp://207.154.241.207`, whereby you need to adjust the 207.154.241.207 with your own **VPS Public IP**.
    - [ ] `docker run -v $OVPN_DATA:/etc/openvpn --rm -it kylemanna/openvpn ovpn_initpki` this generates the necessary VPN certificate password. Take your password manager and create a secure pwd, which you will store safely. It will be needed once we create client-configuration files for your node to connect later.
    - [ ] `docker run -v $OVPN_DATA:/etc/openvpn -d -p 1194:1194/udp -p 9735:9735 -p 9735:9735/udp -p 8080:8080 -p 8080:8080/udp --cap-add=NET_ADMIN kylemanna/openvpn` this works under two assumptions. If any of those aren't true, you need to adjust your settings, either on your node, or by starting the docker container with different ports: 
-     - First, your current LND Node configuration is listening on port 9735, which you can verify by looking into your `cat ~/.lnd/lnd.conf` => `[Application Options]` => `listen=0.0.0.0:9735`
-     - Second, your LND RestLNDWallet is listening on port 8080, same location under `[Application Options]` => `restlisten=0.0.0.0:8080`
+     1) your current LND Node configuration is listening on port 9735, which you can verify by looking into your `cat ~/.lnd/lnd.conf` => `[Application Options]` => `listen=0.0.0.0:9735`
+     2) your LND RestLNDWallet is listening on port 8080, same location under `[Application Options]` => `restlisten=0.0.0.0:8080`
 
 Your OpenVPN Server is now running, which means the Internet can now connect to your VPS via ports 80, 443, 9735 (and 22 SSH), and it has a closed tunnel established on port 1194. You need to complement your notes with the IP-Adresses which are essentially added with the running server.
 
    - [ ] CONTAINER-ID: `docker ps` to list your docker container. In the first column, you will find the `CONTAINER-ID`, usually a cryptic 12-digit number/character combination. Copy into the clipboard and make a note of it. 
    - [ ] Docker Shell: Get into the container, with `docker exec -it <CONTAINER-ID> sh`. 
-   - [ ] VPS Docker IP: Run `ifconfig` and you typically find 3 devices listed with IPs assigned. Make a note of the one with eth0, which is your own `VPS Docker IP: 172.0.0.2`. Type `exit` to get out of the docker-shell.
+   - [ ] VPS Docker IP: Run `ifconfig` and you typically find 3 devices listed with IPs assigned. Make a note of the one with eth0, which is your own `VPS Docker IP: 172.17.0.2`. Type `exit` to get out of the docker-shell.
 
-### 5) Install LNBits on your VPS
+### 5) VPS: Install LNBits
 Next we will install [LNBits](https://lnbits.com/) on this server, since it'll allow to keep your node independent and light-weight. It also allows to change nodes swiftly in-case you need to move things. We won't install it via Docker (like Umbrel does), but do the implementation based slightly on their [Github Installation Guide](https://github.com/lnbits/lnbits-legend/blob/main/docs/devs/installation.md). You can also follow their [own, excellent video walkthrough](https://youtu.be/WJRxJtYZAn4?t=49) here. Just don't use Ben's commands, since these are a little dated.
 Since we assume you have followed the hardening guide above to add additional users, we will now have to use `sudo` in our commands.
 ```
@@ -130,12 +130,12 @@ $ pipenv run python -m uvicorn lnbits.__main__:app
 ```
 Now when this is successfully starting, you can abort with CTRL-C. We will come back to this for further configuration editing LNBits' config-file to our desired setup.
 
-### 6) Retrieve the OpenVPN config & certificate
+### 6) VPS: Retrieve the OpenVPN config & certificate
 In this section we'll switch our work from setting up the server towards getting your LND node ready to connect to the tunnel. For this, we will retrieve and transfer the configuration file from your VPS to your node.
    - [ ] `docker run -v $OVPN_DATA:/etc/openvpn --rm -it kylemanna/openvpn easyrsa build-client-full NODE-NAME nopass` whereby `NODE-NAME` should be changed to a unique identifier you chose. For example, if your LND Node is called "BringMeSomeSats", I suggest to use that - with all lowercase.
    - [ ] `docker run -v $OVPN_DATA:/etc/openvpn --rm kylemanna/openvpn ovpn_getclient NODE-NAME > NODE-NAME.ovpn` which will prompt you to provide the secure password you have generated earlier. Afterwards, it'll store `bringmesomesats.ovpn` in the directory you currently are.
 
-### 7) Install and test the VPN Tunnel on your LND Node
+### 7) LND Node: Install and test the VPN Tunnel
 Now switch to another terminal window, and SSH into your **Lightning Node**. We want to connect to the VPS and retrieve the VPN-Config file, to be able to establish the tunnel
 ```
 $ cd ~
@@ -200,44 +200,46 @@ _Adjust ports and IPs accordingly!_
 
 <details><summary>Click here to expand Raspiblitz / Raspibolt settings</summary>
 <p>
-LND.conf adjustments, open with `sudo nano /mnt/hdd/lnd/lnd.conf`
+
+   LND.conf adjustments, open with `sudo nano /mnt/hdd/lnd/lnd.conf`
 
 [**Application Options**]
-| Command | Description |
-| --- | --- |
-| `externalip=207.154.241.207:9735`           | # to add your VPS Public-IP |
-| `nat=false`                                 | # deactivate NAT |
-| `tlsextraip=172.17.0.2`                     | # allow later LNbits-access to your rest-wallet API |
+   | Command | Description |
+   | --- | --- |
+   | `externalip=207.154.241.207:9735`           | # to add your VPS Public-IP |
+   | `nat=false`                                 | # deactivate NAT |
+   | `tlsextraip=172.17.0.2`                     | # allow later LNbits-access to your rest-wallet API |
 
 [**tor**]
-| Command | Description |
-| --- | --- |
-| `tor.active=true`                           | # ensure Tor is active |
-| `tor.v3=true`                               | # with the latest version. v2 is going to be deprecated this summer |
-| `tor.streamisolation=false`                 | # this needs to be false, otherwise hybrid mode doesn't work |
-| `tor.skip-proxy-for-clearnet-targets=true`  | # activate hybrid mode |
+   | Command | Description |
+   | --- | --- |
+   | `tor.active=true`                           | # ensure Tor is active |
+   | `tor.v3=true`                               | # with the latest version. v2 is going to be deprecated this summer |
+   | `tor.streamisolation=false`                 | # this needs to be false, otherwise hybrid mode doesn't work |
+   | `tor.skip-proxy-for-clearnet-targets=true`  | # activate hybrid mode |
 
 `CTRL-X` => `Yes` => `Enter` to save
 
 RASPIBLITZ CONFIG FILE
-`sudo nano /mnt/hdd/raspiblitz/conf` since Raspiblitz has some LND pre-check scripts which otherwise overwrite your settings.
-| Command | Description |
-| --- | --- |
-| `publicIP='207.154.241.207'`                | # add your VPS Public-IP |
-| `lndPort='9735'`                            | # define the LND port |
-| `lndAddress='207.154.241.207'`              | # define your LND public IP address |
+`sudo nano /mnt/hdd/raspiblitz.conf` since Raspiblitz has some LND pre-check scripts which otherwise overwrite your settings.
+   | Command | Description |
+   | --- | --- |
+   | `publicIP='207.154.241.207'`                | # add your VPS Public-IP |
+   | `lndPort='9735'`                            | # define the LND port |
+   | `lndAddress='207.154.241.207'`              | # define your LND public IP address |
 
 `CTRL-X` => `Yes` => `Enter` to save
 
 LND Systemd Startup adjustment
-`sudo nano /etc/systemd/system/lnd.service` and edit the line 15 where it starts your LND binary, and add the following parameter
- - [ ] `ExecStart=/usr/local/bin/lnd ${lndExtraParameter}`
 
-`CTRL-X` => `Yes` => `Enter` to save
- - [ ] `sudo systemctl restart lnd.service` to take changes into effect and restart your lnd.service. It will ask you to reload the systemd services, copy the command, and run it with sudo. This can take a while, depends how long your last restart was. Be patient.
- - [ ] `sudo tail -n 30 -f /mnt/hdd/lnd/logs/bitcoin/mainnet/lnd.log` to check whether LND is restarting properly
- - [ ] `lncli getinfo` to validate that your node is now online with two uris, your pub-id@VPS-IP and pub-id@Tor-onion
-```
+   | Command | Description |
+   | --- | --- |
+   | `sudo nano /etc/systemd/system/lnd.service` | edit the line 15 where it starts your LND binary, and add the following parameter: `ExecStart=/usr/local/bin/lnd ${lndExtraParameter}` |
+   | `sudo systemctl restart lnd.service` | apply changes and restart your lnd.service. It will ask you to reload the systemd services, copy the command, and run it with sudo. This can take a while, depends how long your last restart was. Be patient. | 
+   | `sudo tail -n 30 -f /mnt/hdd/lnd/logs/bitcoin/mainnet/lnd.log` | to check whether LND is restarting properly |
+   | `lncli getinfo` | to validate that your node is now online with two uris, your pub-id@VPS-IP and pub-id@Tor-onion |
+
+   ```
 "03502e39bb6ebfacf4457da9ef84cf727fbfa37efc7cd255b088de426aa7ccb004@207.154.241.207:9736",
         "03502e39bb6ebfacf4457da9ef84cf727fbfa37efc7cd255b088de426aa7ccb004@vsryyejeizfx4vylexg3qvbtwlecbbtdgh6cka72gnzv5tnvshypyvqd.onion:9735"
 ```        
@@ -248,35 +250,33 @@ LND Systemd Startup adjustment
 <details><summary>Click here to expand Umbrel / Citadel settings</summary>
 <p>
 <!-- Add further comments for Umbrel and validate how to adjust starting LND docker with those changes, and making them persistent -->
-LND.conf adjustments, open with `sudo nano /home/umbrel/umbrel/lnd/lnd.conf`
 
-   
-| Command | Description |
-| --- | --- |
-| git status | List all new or modified files |
-| git diff | Show file differences that haven't been staged |
+   LND.conf adjustments, open with `sudo nano /home/umbrel/umbrel/lnd/lnd.conf`
+
    
 [**Application Options**]
-| Command | Description |
-| --- | --- |
-| `externalip=207.154.241.207:9735` | # to add your VPS Public-IP | 
-| `nat=false`                       | # deactivate NAT | 
-| `tlsextraip=172.17.0.2`           | # allow later LNbits-access to your rest-wallet API | 
+   | Command | Description |
+   | --- | --- |
+   | `externalip=207.154.241.207:9735` | # to add your VPS Public-IP | 
+   | `nat=false`                       | # deactivate NAT | 
+   | `tlsextraip=172.17.0.2`           | # allow later LNbits-access to your rest-wallet API | 
 
 [**tor**]
-| Command | Description |
-| --- | --- |
-| `tor.active=true`                          | # ensure Tor is active | 
-| `tor.v3=true`                              | # with the latest version. v2 is going to be deprecated this summer | 
-| `tor.streamisolation=false`                | # this needs to be false, otherwise hybrid mode doesn't work | 
-| `tor.skip-proxy-for-clearnet-targets=true` | # activate hybrid mode | 
+   | Command | Description |
+   | --- | --- |
+   | `tor.active=true`                          | # ensure Tor is active | 
+   | `tor.v3=true`                              | # with the latest version. v2 is going to be deprecated this summer | 
+   | `tor.streamisolation=false`                | # this needs to be false, otherwise hybrid mode doesn't work | 
+   | `tor.skip-proxy-for-clearnet-targets=true` | # activate hybrid mode | 
 
 `CTRL-X` => `Yes` => `Enter` to save
 
-LND Restart to incorporate changes to `lnd.conf`: 
- - [ ] `cd umbrel && docker-compose restart lnd`   # this can take a while, depends how long your last restart was. Be patient.
- - [ ] `tail -n 30 -f ~/umbrel/lnd/logs/bitcoin/mainnet/lnd.log` to check whether LND is restarting properly
- - [ ] `~/umbrel/bin/lncli getinfo` to validate that your node is now online with two uris, your pub-id@VPS-IP and pub-id@Tor-onion
+LND Restart to incorporate changes to `lnd.conf`
+   | Command | Description |
+   | --- | --- | 
+   | `cd umbrel && docker-compose restart lnd` | this can take a while, depends how long your last restart was. Be patient. | 
+   | `tail -n 30 -f ~/umbrel/lnd/logs/bitcoin/mainnet/lnd.log` | check whether LND is restarting properly | 
+   | `~/umbrel/bin/lncli getinfo` | validate that your node is now online with two uris, your pub-id@VPS-IP and pub-id@Tor-onion | 
 ```
 "03502e39bb6ebfacf4457da9ef84cf727fbfa37efc7cd255b088de426aa7ccb004@207.154.241.207:9736",
         "03502e39bb6ebfacf4457da9ef84cf727fbfa37efc7cd255b088de426aa7ccb004@vsryyejeizfx4vylexg3qvbtwlecbbtdgh6cka72gnzv5tnvshypyvqd.onion:9735"
@@ -300,30 +300,64 @@ Additional hint: The author did not test the option to run the client automatica
 
 
 ### 11) LND Node: provide your VPS LNBits instance read / write access to your LND Wallet
-Another tricky piece is to respect the excellent security feats the LND engineering team has implemented. Since we don't want to rely on a custodial wallet provider, which would be super easy to add into LNBits, we have some more tinkering to do. Follow along to basically provide two things to your VPS from your LND Node. 
+Assuming LND restarted well on your LND Node, your LND is now listening and connectable via VPS Clearnet IP and Tor. That's quite an achievement already. But we want to setup LNBits as well, right? So go grab another beverage, now we'll get LNBits running.
+For that, let's climb another tricky obstacle; to respect the excellent security feats the LND engineering team has implemented. Since we don't want to rely on a custodial wallet provider, which would be super easy to add into LNBits, we have some more tinkering to do. Follow along to basically provide two things to your VPS from your LND Node. 
 
 **Note of warning again**: Both of those files are highly sensitive. Don't show them to anyone, don't transfer them via Email, just follow the secure channel below and you should be fine, as long you keep the security barriers installed in [Section "Secure"](https://github.com/TrezorHannes/vps-lnbits/edit/main/README.md#secure) intact.
 
-1) your tls.cert. Only with this, your VPS is going to be allowed to leverage your LND Wallet via Rest-API
-`
+1) your tls.cert. Only with access to this file, your VPS is going to be allowed to leverage your LND Wallet via Rest-API
+`scp ~/.lnd/tls.cert root@207.154.241.207:/root/` sends your LND Node tls.cert to your VPS, where we will use it in the next section.
 
-3) your admin.macaroon. Only with that, your VPS can send and receive payments
-
+2) your admin.macaroon. Only with that, your VPS can send and receive payments
+`xxd -ps -u -c ~/.lnd/data/chain/bitcoin/mainnet/admin.macaroon` will provide you with a long, hex-encoded string. Keep that terminal window open, since we need to copy that code and use it in our next step on the VPS.
 
 ### 12) VPS: Customize and configure LNBits to connect to your LNDRestWallet
-Assuming LND restarted well on your LND Node, your LND is now listening and connectable via VPS Clearnet IP and Tor. That's quite an achievement already. But we want to setup LNBits as well, right? So go grab another beverage, and then we'll go back to the VPS terminal.
+ Now since we're back in the VPS terminal, keep your LND Node Terminal open. We'll adjust the LNBits environment settings, and we'll distinguish between _necessary_ and _optional_ adjustments. First, send the following commands:
 ```
 $ cd lnbits-legend
 $ mkdir data
+$ pwd
 $ cp .env.example .env
 $ sudo nano .env
 ```
-#### Necessary adjustments
-# LndRestWallet https://youtu.be/TR8IUu0fMvw?t=582
-LND_REST_ENDPOINT="https://172.17.0.2:18080"
-LND_REST_CERT="/root/cert/tls.cert"
-LND_REST_MACAROON="
+Worth noting, that the directory `data` will hold all your database SQLite3 files. So in case you consider proper backup or migration procedures, this directory is the key to be kept.
 
+#### Necessary adjustments
+ | Variable | Description |
+ | --- | --- |
+ | `LNBITS_DATA_FOLDER="/user/lnbits-legend/data"` | enter the absolute path to the data folder you created above | 
+ | `LNBITS_BACKEND_WALLET_CLASS=LndRestWallet` | Specify that we want to use our LND Node Wallet Rest-API
+ | `LND_REST_ENDPOINT="https://172.17.0.2:8080"` | Add your `VPS Docker IP: 172.17.0.2` on port 8080 | 
+ | `LND_REST_CERT="/root/tls.cert"` | Add the link to the tls.cert file copied over earlier | 
+ | `LND_REST_MACAROON="HEXSTRING"` | Copy the hex-encoded snippet from your LND Node Terminal output from Section 11.2 in here | 
+ 
+ #### Optional adjustments
+ | Variable | Description |
+ | --- | --- |
+ | `LNBITS_SITE_TITLE="HODLmeTight LNbits"` | Give your Website a tacky title |
+ | `LNBITS_SITE_TAGLINE="free and open-source lightning wallet"` | Define the sub-title in the body |
+ | `LNBITS_SITE_DESCRIPTION="Offering free and easy Lightning Bitcoin Payment options for Friends & Family"` | Outline your offering |
+ | `LNBITS_THEME_OPTIONS="classic, bitcoin, flamingo, mint, autumn, monochrome, salvador"` | Provide different color themes, or keep it simple |
+ `CTRL-X` => `Yes` => `Enter` to save
+ 
+ ### 12) Start LNBits and test the LND Node wallet connection
+ As soon you got here, we got the most complex things done 💪. The next few steps will be a walk in the park. Get another beverage.
+```
+$ tmux new -s lnbits
+$ cd ~/lnbits-legend
+$ pipenv --python 3.9 shell
+$ pipenv run python -m uvicorn lnbits.__main__:app --host 0.0.0.0
+```
+See further uvicorn startup options listed here, but with the slightly adjusted default settings, LNBits should now be running and listening on all incoming requests on port 8000. If you're impatient, add a temporary[^1] ufw exception to test it: `sudo ufw allow 8000/tcp comment 'temporary lnbits check'` and open the corresponding `VPS Public IP: 207.154.241.207:8000` (don't use this IP, it's mine and you will celebrate prematurely). 
+
+If you see your own LNBits instance, with all your _Optional Adjustments_ added, we'll go to the last, final endboss. 
+
+[^1]: To remove the ufw setting - we don't want to expose any unnecessary ports - call `sudo ufw status numbered`, followed by `sudo ufw delete #number` of the two port 8000 entries.
+
+### 13) Your domain and SSL setup
+
+
+ ## Appendix & FAQ
 
 
 
