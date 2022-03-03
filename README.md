@@ -108,9 +108,9 @@ Now we will get OpenVPN installed, but using a Docker Setup like [Krypto4narchis
 
 Your OpenVPN Server is now running, which means the Internet can now connect to your VPS via ports 80, 443, 9735 (and 22 SSH), and it has a closed tunnel established on port 1194. You need to complement your notes with the IP-Adresses which are essentially added with the running server.
 
-   - [ ] Collect the Docker Tunnel IP adress: `docker ps` to list your docker container. In the first column, you will find it's ID, usually a cryptic 12-digit number/character combination. Copy into the clipboard and make a note of it. Then go into the container shell, with `docker exec -it <CONTAINER-ID> sh`. Run `ifconfig` and you typically find 3 devices listed with IPs assigned. Make a note of the one with eth0, which is your own **VPS Docker IP**: 172.0.0.2
+   - [ ] Collect the Docker Tunnel IP adress: `docker ps` to list your docker container. In the first column, you will find the `CONTAINER-ID`, usually a cryptic 12-digit number/character combination. Copy into the clipboard and make a note of it. Then go into the container shell, with `docker exec -it <CONTAINER-ID> sh`. Run `ifconfig` and you typically find 3 devices listed with IPs assigned. Make a note of the one with eth0, which is your own **VPS Docker IP**: 172.0.0.2
 
-### 4) Install LNBits on your VPS
+### 4) Install LNBits on your VPSInstall LNBits on your VPS
 Next we will install [LNBits](https://lnbits.com/) on this server, since it'll allow to keep your node independent and light-weight. It also allows to change nodes swiftly in-case you need to move things. We won't install it via Docker (like Umbrel does), but do the implementation based slightly on their [Github Installation Guide](https://github.com/lnbits/lnbits-legend/blob/main/docs/devs/installation.md). You can also follow their [own, excellent video walkthrough](https://youtu.be/WJRxJtYZAn4?t=49) here. Just don't use Ben's commands, since these are a little dated.
 Since we assume you have followed the hardening guide above to add additional users, we will now have to use `sudo` in our commands.
 ```
@@ -121,10 +121,22 @@ sudo apt install pipenv
 cd lnbits-legend
 pipenv --python 3.9 shell
 pipenv run pip install -r requirements.txt
-# This start-up command we leave for later: pipenv run python -m uvicorn lnbits.__main__:app
+pipenv run python -m uvicorn lnbits.__main__:app
 ```
-Now when this is finished, we'll edit LNBits' config-file to our desired setup. 
+Now when this is successfully starting, you can abort with CTRL-C. We will come back to this for further configuration editing LNBits' config-file to our desired setup.
+
+### 5) Retrieve and transfer the OpenVPN config & certificate to your Node
+In this section we'll switch our work from setting up the server towards getting your LND node ready to connect to the tunnel. For this, we will retrieve and transfer the configuration file from your VPS to your node.
+   - [ ] `docker run -v $OVPN_DATA:/etc/openvpn --rm -it kylemanna/openvpn easyrsa build-client-full NODE-NAME nopass` whereby `NODE-NAME` should be changed to a unique identifier you chose. For example, if your LND Node is called "BringMeSomeSats", I suggest to use that - with all lowercase.
+   - [ ] `docker run -v $OVPN_DATA:/etc/openvpn --rm kylemanna/openvpn ovpn_getclient NODE-NAME > NODE-NAME.ovpn` which will prompt you to provide the secure password you have generated earlier. Afterwards, it'll store `bringmesomesats.ovpn` in the directory you currently are.
+
+
+
+
+
+### ) Customize and configure LNBits to connect to your LNDRestWallet
 ```
+cd lnbits-legend
 mkdir data
 cp .env.example .env
 sudo nano .env
