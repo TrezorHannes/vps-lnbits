@@ -210,7 +210,7 @@ The tunnel between your LND Node and your VPS VPN is established. We can place t
 ### 8) VPS: Add routing tables configuration into your droplet docker
 Back to your terminal window connected to your VPS. We have the `VPN Client IP: 192.168.255.6` now, which we need to tell our VPS where it should route those packets to. To achieve that, we'll get back into the docker container and add IPTables rules.
 
-   - [ ] Remember how to get into the container? Arrow-up on your keyboard, or do `docker ps` and `docker exec -it <CONTAINER-ID> sh`
+   - [ ] [Remember](#4-vps-install-openvpn-server) how to get into the container? Arrow-up on your keyboard, or do `docker ps` and `docker exec -it <CONTAINER-ID> sh`
    - [ ] Doublecheck your VPN Client IP, and adjust it in the following IPtables commands you enter into the container and confirm with Enter
 
 ```
@@ -321,7 +321,7 @@ LND Restart to incorporate changes to `lnd.conf`
 </details>
 
 ### 10) LND Node: Start your VPN Client again
-The reboot killed your tmux session running the OpenVPN client. Remember it from [section 7)](#7-install-and-test-the-vpn-tunnel-on-your-lnd-node)? Here is how you restart it:
+The reboot killed your tmux session running the OpenVPN client. Remember it from [section 7](#7-lnd-node-install-and-test-the-vpn-tunnel)? Here is how you restart it:
 ```
 $ sudo apt-get install openvpn tmux
 $ tmux new -s vps
