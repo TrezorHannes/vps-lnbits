@@ -1,5 +1,5 @@
 # VPS-LNbits
-_Documentation to setup LNbits on a VPS, connected to your Lightning Network Node_
+_Documentation to setup LNbits on a VPS, connected to your Lightning Network Node through a secured tunnel_
 <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/0/0b/Brenner_Base_Tunnel_Aicha-Mauls.jpg/640px-Brenner_Base_Tunnel_Aicha-Mauls.jpg" alt="Brennerbasistunnel – Wikipedia"/>
 
 Here's my current setup shared with you, and your intend can be manyfold, you may
@@ -33,7 +33,7 @@ This guide heavily relies on the intelligence and documentation of others 🙏, 
 
 
 ## Pre-Requisites
-- running `lnd-0.14.1-beta` or later. This can either be [Umbrel](https://getumbrel.com), [Raspiblitz](https://github.com/rootzoll/raspiblitz), [MyNode](https://mynodebtc.com/) or even a bare [RaspiBolt](https://raspibolt.org/)
+- running `lnd-0.14.2-beta` or later. This can either be [Umbrel](https://getumbrel.com), [Raspiblitz](https://github.com/rootzoll/raspiblitz), [MyNode](https://mynodebtc.com/) or even a bare [RaspiBolt](https://raspibolt.org/)
 - Technical curiosity and not too shy to use the command-line
 - A domain name or a subdomain registered at [DuckDNS](duckdns.org)
 - An SSH connection to your node, and to the VPS as well. On Windows, use something like [putty](https://www.putty.org/) and get [putty-gen](https://www.ssh.com/academy/ssh/putty/windows/puttygen), too
@@ -79,10 +79,10 @@ In case you don't have a **VPS provider** already, sign-up with [my referal](htt
    - [ ] Add backups (costs), Monitoring or IPv6 if you wish to, however this guide won't use any of those items
    - [ ] Lastly, chose a tacky hostname, something which resonates with you, eg myLNBits-VPS
 
-After a few magic cloud things happening, you have your Droplet initiated and it provides you with a public IPv4 Adress. Add it to your notes! In this guide, I'll refer to it as `VPS Public IP: 207.154.241.207`
+After a few magic cloud things happening, you have your Droplet initiated and it provides you with a public IPv4 Adress. Add it to your notes! In this guide, I'll refer to it as `VPS Public IP: 207.154.241.101`
 
 ### 3) VPS: Connect to your VPS and tighten it up
-Connect to your VPS via `SSH root@207.154.241.207` and you will be welcomed on your new, remote server. Next steps are critical to do right away, harden your setup:
+Connect to your VPS via `SSH root@207.154.241.101` and you will be welcomed on your new, remote server. Next steps are critical to do right away, harden your setup:
    - [ ] Update your packages: `apt-get update` and `apt-get upgrade`
    - [ ] Install Docker & tmux: `apt-get install docker.io tmux`
    - [ ] Enable Docker automated start: `systemctl start docker.service`
@@ -104,7 +104,7 @@ $ ufw enable
 Now we will get OpenVPN installed, but using a Docker Setup like [Krypto4narchista](https://twitter.com/_pthomann) suggests [here](https://www.mobycrypt.com/turn-your-self-hosted-lightning-network-node-to-public-in-10-minutes/). It's easier to setup, but needs some tinkering with port forwarding, which we will go into in a bit.
    - [ ] `export OVPN_DATA="ovpn-data"` which sets a global-name placeholder for your VPN to be used for all the following commands. You can make this permanent by adding this to survive any reboot via `nano .bashrc`, add it to the very bottom => CTRL-X => Yes. 
    - [ ] `docker volume create --name $OVPN_DATA` notice how the $ indicates picking up the placeholder you have defined above
-   - [ ] `docker run -v $OVPN_DATA:/etc/openvpn --rm kylemanna/openvpn ovpn_genconfig -u udp://207.154.241.207`, whereby you need to adjust the 207.154.241.207 with your own **VPS Public IP**.
+   - [ ] `docker run -v $OVPN_DATA:/etc/openvpn --rm kylemanna/openvpn ovpn_genconfig -u udp://207.154.241.101`, whereby you need to adjust the 207.154.241.101 with your own **VPS Public IP**.
    - [ ] `docker run -v $OVPN_DATA:/etc/openvpn --rm -it kylemanna/openvpn ovpn_initpki` this generates the necessary VPN certificate password. Take your password manager and create a secure pwd, which you will store safely. It will be needed once we create client-configuration files for your node to connect later.
    - [ ] `docker run -v $OVPN_DATA:/etc/openvpn -d -p 1194:1194/udp -p 9735:9735 -p 9735:9735/udp -p 8080:8080 -p 8080:8080/udp --cap-add=NET_ADMIN kylemanna/openvpn` this works under two assumptions. If any of those aren't true, you need to adjust your settings, either on your node, or by starting the docker container with different ports: 
      1) your current LND Node configuration is listening on port 9735, which you can verify by looking into your `cat ~/.lnd/lnd.conf` => `[Application Options]` => `listen=0.0.0.0:9735`
@@ -141,7 +141,7 @@ Now switch to another terminal window, and SSH into your **Lightning Node**. We 
 ```
 $ cd ~
 $ mkdir VPNcert
-$ scp user@207.154.241.207:/home/user/bringmesomesats.ovpn /home/admin/VPNcert/
+$ scp user@207.154.241.101:/home/user/bringmesomesats.ovpn /home/admin/VPNcert/
 $ chmod 600 /home/admin/VPNcert/bringmesomesats.ovpn
 ```
 _Note: You need to adjust `user`, the **VPS Public IP** and the absolute directory where the ovpn file is stored. Also make sure you are concious where you place this file on your LND Node, because we need it later._
@@ -158,12 +158,12 @@ $ sudo openvpn --config /home/admin/VPNcert/bringmesomesats.ovpn
 You should see something similiar to the following output. Note this one line indicating the next important IP Adress `VPN Client IP: 192.168.255.6`. Make a note of it, we need it for port-configuration at the server, soon.
 ```
 2022-03-02 17:38:10 library versions: OpenSSL 1.1.1k  25 Mar 2021, LZO 2.10
-2022-03-02 17:38:10 TCP/UDP: Preserving recently used remote address: [AF_INET]207.154.241.207:1194
+2022-03-02 17:38:10 TCP/UDP: Preserving recently used remote address: [AF_INET]207.154.241.101:1194
 2022-03-02 17:38:10 UDP link local: (not bound)
-2022-03-02 17:38:10 UDP link remote: [AF_INET]207.154.241.207:1194
+2022-03-02 17:38:10 UDP link remote: [AF_INET]207.154.241.101:1194
 2022-03-02 17:38:11 WARNING: 'link-mtu' is used inconsistently, local='link-mtu 1541', remote='link-mtu 1542'
 2022-03-02 17:38:11 WARNING: 'comp-lzo' is present in remote config but missing in local config, remote='comp-lzo'
-2022-03-02 17:38:11 [207.154.241.207] Peer Connection Initiated with [AF_INET]207.154.241.207:1194
+2022-03-02 17:38:11 [207.154.241.101] Peer Connection Initiated with [AF_INET]207.154.241.101:1194
 2022-03-02 17:38:12 Options error: Unrecognized option or missing or extra parameter(s) in [PUSH-OPTIONS]:1: block-outside-dns (2.5.1)
 2022-03-02 17:38:12 TUN/TAP device tun0 opened
 2022-03-02 17:38:12 net_iface_mtu_set: mtu 1500 for tun0
@@ -207,7 +207,7 @@ _Adjust ports and IPs accordingly!_
 [**Application Options**]
    | Command | Description |
    | --- | --- |
-   | `externalip=207.154.241.207:9735`           | # to add your VPS Public-IP |
+   | `externalip=207.154.241.101:9735`           | # to add your VPS Public-IP |
    | `nat=false`                                 | # deactivate NAT |
    | `tlsextraip=172.17.0.2`                     | # allow later LNbits-access to your rest-wallet API |
 
@@ -225,9 +225,9 @@ RASPIBLITZ CONFIG FILE
 `sudo nano /mnt/hdd/raspiblitz.conf` since Raspiblitz has some LND pre-check scripts which otherwise overwrite your settings.
    | Command | Description |
    | --- | --- |
-   | `publicIP='207.154.241.207'`                | # add your VPS Public-IP |
+   | `publicIP='207.154.241.101'`                | # add your VPS Public-IP |
    | `lndPort='9735'`                            | # define the LND port |
-   | `lndAddress='207.154.241.207'`              | # define your LND public IP address |
+   | `lndAddress='207.154.241.101'`              | # define your LND public IP address |
 
 `CTRL-X` => `Yes` => `Enter` to save
 
@@ -241,7 +241,7 @@ LND Systemd Startup adjustment
    | `lncli getinfo` | to validate that your node is now online with two uris, your pub-id@VPS-IP and pub-id@Tor-onion |
 
    ```
-"03502e39bb6ebfacf4457da9ef84cf727fbfa37efc7cd255b088de426aa7ccb004@207.154.241.207:9736",
+"03502e39bb6ebfacf4457da9ef84cf727fbfa37efc7cd255b088de426aa7ccb004@207.154.241.101:9736",
         "03502e39bb6ebfacf4457da9ef84cf727fbfa37efc7cd255b088de426aa7ccb004@vsryyejeizfx4vylexg3qvbtwlecbbtdgh6cka72gnzv5tnvshypyvqd.onion:9735"
 ```        
  - [ ] Restart your LND Node with `sudo reboot`
@@ -258,7 +258,7 @@ LND Systemd Startup adjustment
 [**Application Options**]
    | Command | Description |
    | --- | --- |
-   | `externalip=207.154.241.207:9735` | # to add your VPS Public-IP | 
+   | `externalip=207.154.241.101:9735` | # to add your VPS Public-IP | 
    | `nat=false`                       | # deactivate NAT | 
    | `tlsextraip=172.17.0.2`           | # allow later LNbits-access to your rest-wallet API | 
 
@@ -279,7 +279,7 @@ LND Restart to incorporate changes to `lnd.conf`
    | `tail -n 30 -f ~/umbrel/lnd/logs/bitcoin/mainnet/lnd.log` | check whether LND is restarting properly | 
    | `~/umbrel/bin/lncli getinfo` | validate that your node is now online with two uris, your pub-id@VPS-IP and pub-id@Tor-onion | 
 ```
-"03502e39bb6ebfacf4457da9ef84cf727fbfa37efc7cd255b088de426aa7ccb004@207.154.241.207:9736",
+"03502e39bb6ebfacf4457da9ef84cf727fbfa37efc7cd255b088de426aa7ccb004@207.154.241.101:9736",
         "03502e39bb6ebfacf4457da9ef84cf727fbfa37efc7cd255b088de426aa7ccb004@vsryyejeizfx4vylexg3qvbtwlecbbtdgh6cka72gnzv5tnvshypyvqd.onion:9735"
 ```
  - [ ] Restart your LND Node with `sudo reboot`
@@ -307,7 +307,7 @@ For that, let's climb another tricky obstacle; to respect the excellent security
 **Note of warning again**: Both of those files are highly sensitive. Don't show them to anyone, don't transfer them via Email, just follow the secure channel below and you should be fine, as long you keep the security barriers installed in [Section "Secure"](https://github.com/TrezorHannes/vps-lnbits/edit/main/README.md#secure) intact.
 
 1) your tls.cert. Only with access to this file, your VPS is going to be allowed to leverage your LND Wallet via Rest-API
-`scp ~/.lnd/tls.cert root@207.154.241.207:/root/` sends your LND Node tls.cert to your VPS, where we will use it in the next section.
+`scp ~/.lnd/tls.cert root@207.154.241.101:/root/` sends your LND Node tls.cert to your VPS, where we will use it in the next section.
 
 2) your admin.macaroon. Only with that, your VPS can send and receive payments
 `xxd -ps -u -c ~/.lnd/data/chain/bitcoin/mainnet/admin.macaroon` will provide you with a long, hex-encoded string. Keep that terminal window open, since we need to copy that code and use it in our next step on the VPS.
@@ -351,7 +351,7 @@ $ pipenv run python -m uvicorn lnbits.__main__:app --host 0.0.0.0
 ```
 Back into the background with `CTRL-B + CTRL-D`
 
-See further uvicorn startup options [listed here](https://www.uvicorn.org/deployment/), but with our slightly adjusted default settings, LNBits should now be running and listening on all incoming requests on port 8000. If you're impatient, add a temporary[^1] ufw exception to test it: `sudo ufw allow 8000/tcp comment 'temporary lnbits check'` and open the corresponding `VPS Public IP: 207.154.241.207:8000` (don't use this IP, it's mine and you will celebrate prematurely). 
+See further uvicorn startup options [listed here](https://www.uvicorn.org/deployment/), but with our slightly adjusted default settings, LNBits should now be running and listening on all incoming requests on port 8000. If you're impatient, add a temporary[^1] ufw exception to test it: `sudo ufw allow 8000/tcp comment 'temporary lnbits check'` and open the corresponding `VPS Public IP: 207.154.241.101:8000`. 
 
 If you see your own LNBits instance, with all your _Optional Adjustments_ added, we'll go to the last, final endboss. 
 
@@ -364,7 +364,7 @@ We don't want to share our IP-Adress for others to pay us, a domain name is a mu
 While there are plenty of domain-name providers out there, we are going to use a free, easy and secure provider: [duckdns.org](https://www.duckdns.org/). They do their own elevator pitch why to use them on their site. Feel free to pick another, such as [Ahnames](https://ahnames.com/en), but this guide will use the former for simplicity
    - [ ] make an account on DuckDNS with GH or Email
    - [ ] add 1 of 5 free subdomains, eg. paymeinsats
-   - [ ] point this domain to your `VPS Public IP: 207.154.241.207`
+   - [ ] point this domain to your `VPS Public IP: 207.154.241.101`
    - [ ] Make a note of your Token
 
 Keep the site open, we'll need it soon
@@ -461,3 +461,6 @@ Please add an issue on Github with your question and provide as much detail as p
 
 ### So I have LNBits running, now what?
 Head over to [LNBits Website](https://lnbits.com/) and check out the plethora of options you could do. For instance, I've built a donation wallet, which is shared 50:50 between the main author and my own wallet. All automated.
+
+### Why DigitalOcean - can't we pick a VPS where we can pay with Lightning, and anonymously
+Consider this guide a work-in-progress. I've picked DigitalOcean since I know what I'm doing there. Will add alternative or even better options once I've done some thorough test myself how to accomplish the same results. Fee free to provide suggestions here.
