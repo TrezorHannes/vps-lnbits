@@ -1,6 +1,6 @@
 # VPS-LNbits
-_Documentation how to setup LNbits on a VPS, connected to your Lightning Network Node_
-<img src="https://upload.wikimedia.org/wikipedia/commons/thumb/0/0b/Brenner_Base_Tunnel_Aicha-Mauls.jpg/640px-Brenner_Base_Tunnel_Aicha-Mauls.jpg" alt="Brennerbasistunnel – Wikipedia"/>![image](https://user-images.githubusercontent.com/35168804/156727952-74e7a6c3-bb7b-47f2-8fb2-36efc373cd3c.png)
+_Documentation to setup LNbits on a VPS, connected to your Lightning Network Node_
+<img src="https://upload.wikimedia.org/wikipedia/commons/thumb/0/0b/Brenner_Base_Tunnel_Aicha-Mauls.jpg/640px-Brenner_Base_Tunnel_Aicha-Mauls.jpg" alt="Brennerbasistunnel – Wikipedia"/>
 
 Here's my current setup shared with you, and your intend can be manyfold, you may
 - have a dynamic IP from your Internet Service Provider
