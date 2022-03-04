@@ -1,5 +1,6 @@
 # VPS-LNbits
 _Documentation how to setup LNbits on a VPS, connected to your Lightning Network Node_
+<img src="https://upload.wikimedia.org/wikipedia/commons/thumb/0/0b/Brenner_Base_Tunnel_Aicha-Mauls.jpg/640px-Brenner_Base_Tunnel_Aicha-Mauls.jpg" alt="Brennerbasistunnel – Wikipedia"/>![image](https://user-images.githubusercontent.com/35168804/156727952-74e7a6c3-bb7b-47f2-8fb2-36efc373cd3c.png)
 
 Here's my current setup shared with you, and your intend can be manyfold, you may
 - have a dynamic IP from your Internet Service Provider
@@ -193,7 +194,7 @@ What we basically do here, is assign a ruleset to say: As soon a packet arrives 
 ### 9) LND Node: LND adjustments to listen and channel via VPS VPN Tunnel
 We switch Terminal windows again, going back to your LND Node. A quick disclaimer again, since we are fortunate enough to have plenty of good LND node solutions out there, we cannot cater for every configuration out there. Feel free to leave comments or log issues if you get stuck for your node, we'll be looking at the two most different setups here. But this should work very similar on _MyNode_, _Raspibolt_ or _Citadel_.
 
-Be very cautious with your `lnd.conf`. Make a backup before with `cp /mnt/hdd/lnd/lnd.conf /mnt/hdd/lnd/lnd.bak` so you can rever back when things don't work out. 
+Be very cautious with your `lnd.conf`. Make a backup before with `cp /mnt/hdd/lnd/lnd.conf /mnt/hdd/lnd/lnd.bak` so you can revert back when things don't work out. 
 The brackets below indicate the section where each line needs to be added to. Don't place anything anywhere else, as it will cause your LND constrain from starting properly.
 
 _Adjust ports and IPs accordingly!_
@@ -454,3 +455,9 @@ or via my LN-Email hakuna@btcadresse.de. I'm also always grateful for incoming c
 
 ### I see anyone can create a wallet on my LNBits service, but I don't want that. How do I change that?
 Once you have created your first user wallet, and you want only this to be accessible, go to the user-section in LNBits and notice the user-ID in the URL: `/usermanager/?usr=[32-digit-user-ID]`. Copy the user-id and add it to your `.env` file: `nano ~/lnbits-legend/.env` and add this to the variable `LNBITS_ALLOWED_USERS=""`. You can comma-seperate a list of user-ids.
+
+### I'm stuck and have no idea why it's not working. Who can help?
+Please add an issue on Github with your question and provide as much detail as possible. Keep it safe though, no macaroon or user-ids!
+
+### So I have LNBits running, now what?
+Head over to [LNBits Website](https://lnbits.com/) and check out the plethora of options you could do. For instance, I've built a donation wallet, which is shared 50:50 between the main author and my own wallet. All automated.
