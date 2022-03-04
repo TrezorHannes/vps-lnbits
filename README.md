@@ -340,21 +340,23 @@ Worth noting, that the directory `data` will hold all your database SQLite3 file
  | `LNBITS_THEME_OPTIONS="classic, bitcoin, flamingo, mint, autumn, monochrome, salvador"` | Provide different color themes, or keep it simple |
  `CTRL-X` => `Yes` => `Enter` to save
  
- ### 12) VPS: Start LNBits and test the LND Node wallet connection
- As soon you got here, we got the most complex things done 💪. The next few steps will be a walk in the park. Get another beverage.
+ ### 13) VPS: Start LNBits and test the LND Node wallet connection
+ As soon you got here, we got the most complex things done 💪. The next few steps will be a walk in the park. Get another beverage, and then start LNBits again in your tmux-environment
 ```
 $ tmux new -s lnbits
 $ cd ~/lnbits-legend
 $ pipenv --python 3.9 shell
 $ pipenv run python -m uvicorn lnbits.__main__:app --host 0.0.0.0
 ```
-See further uvicorn startup options listed here, but with the slightly adjusted default settings, LNBits should now be running and listening on all incoming requests on port 8000. If you're impatient, add a temporary[^1] ufw exception to test it: `sudo ufw allow 8000/tcp comment 'temporary lnbits check'` and open the corresponding `VPS Public IP: 207.154.241.207:8000` (don't use this IP, it's mine and you will celebrate prematurely). 
+Back into the background with `CTRL-B + CTRL-D`
+
+See further uvicorn startup options [listed here](https://www.uvicorn.org/deployment/), but with our slightly adjusted default settings, LNBits should now be running and listening on all incoming requests on port 8000. If you're impatient, add a temporary[^1] ufw exception to test it: `sudo ufw allow 8000/tcp comment 'temporary lnbits check'` and open the corresponding `VPS Public IP: 207.154.241.207:8000` (don't use this IP, it's mine and you will celebrate prematurely). 
 
 If you see your own LNBits instance, with all your _Optional Adjustments_ added, we'll go to the last, final endboss. 
 
 [^1]: To remove the ufw setting - we don't want to expose any unnecessary ports - call `sudo ufw status numbered`, followed by `sudo ufw delete #number` of the two port 8000 entries.
 
-### 13) Your domain, Webserver and SSL setup
+### 14) Your domain, Webserver and SSL setup
 We don't want to share our IP-Adress for others to pay us, a domain name is a much better brand. And we want to keep it secure, so we need to get us an SSL certificate. Good for you, both options are available for free, just needs some further work.
 
 #### Domain
@@ -366,8 +368,8 @@ While there are plenty of domain-name providers out there, we are going to use a
 
 Keep the site open, we'll need it soon
 
-#### VPS: Webserver & SSL certificate
-Uvicorn is working fine, but a robust solution, which is able to do some caching and better log-management is nginx (engine-x). We'll also use certbot to manage our SSL certificate management, even though LNBits recommends [caddy](https://caddyserver.com/docs/install#debian-ubuntu-raspbian). Use your own preference, we'll walk through certbot here:
+#### VPS: SSL certificate
+You want your secure https:// site to confirm to your visitor's browser that you're legit. For this, we will use Certbot to manage our SSL certificate management, even though LNBits recommends [caddy](https://caddyserver.com/docs/install#debian-ubuntu-raspbian). Use your own preference, we'll walk through certbot here:
 ```
 $ sudo apt update
 $ sudo apt install nginx certbot
@@ -377,16 +379,78 @@ Next to a few other things, Certbot will ask you for your domain, so add your `p
 To achieve this, leave the certbot alone without touching anything, and follow those steps in parallel:
    - [ ] Open a text editor, and add this URL: `https://www.duckdns.org/update?domains={YOURVALUE}&token={YOURVALUE}&txt={YOURVALUE}[&verbose=true]`
    - [ ] replace each variable[^2]
-     - `domains={YOURVALUE}` with your subdomain only, in our case `domains=paymeinsats̀
+     - `domains={YOURVALUE}` with your subdomain only, in our case `domains=paymeinsats`
      - `token={YOURVALUE}` with your token from your duckdns.org overview
      - `txt={YOURVALUE}` with the random text-snippet certbot provided you to fill in
      - optional: set `verbose=true` if you want 2 lines more info as a response
    - [ ] Copy that whole string into a new Webbrowser window, and if verbose isn't set as true, it'll be as crisp as `OK`
    - [ ] In a new Terminal window, install dig `sudo apt-get install dnsutils` to check if the world knows about you solved the challenge: `dig -t txt _acme-challenge.paymeinsats.duckdns.org`. Compare the TXT record entry with what Certbot provided you. If both are similar, confirm with `Enter` in the Certbot Terminal, so it can do it's own verification
-   - [ ] Once successful, you got your SSL certificates. Make a note in your calendar when the validation time is over, so you renew early enough.
+   - [ ] Once successful, you got your SSL certificates. Make a note in your calendar when the validation time is over, so you renew early enough. Also take note of the absolute paths of those two certificates you received.
 
-[^2]: [further details here](https://www.duckdns.org/spec.jsp)
+[^2]: [Visit Specpage of duckdns.org for further details here](https://www.duckdns.org/spec.jsp)
+
+
+#### VPS: Webserver NGINX
+Uvicorn is working fine, but we'll add a more robust solution, to be able to do some caching and better log-management: nginx (engine-x). We'll add a new configuration file for your website.
+
+_Please don't forget to adjust domain names and paths below accordingly_
+
+   - [ ] `sudo nano /etc/nginx/sites-available/paymeinsats.conf` to create and edit your new configuration file nginx will use
+
+Add the following entries
+```
+server {
+        # Binds the TCP port 80
+        listen 80;
+        # Defines the domain or subdomain name
+        server_name paymeinsats.duckdns.org;
+        # Redirect the traffic to the corresponding 
+        # HTTPS server block with status code 301
+        return 301 https://$host$request_uri;
+       }
+
+server {
+        listen 443 ssl; # tell nginx to listen on port 443 for SSL connections
+        server_name paymeinsats.duckdns.org; # tell nginx the expected domain for requests
+
+        access_log /var/log/nginx/paymeinsats-access.log; # Your first go-to for troubleshooting
+        error_log /var/log/nginx/paymeinsats-error.log; # Same as above
+
+        location / {
+                proxy_pass http://127.0.0.1:8000; # This is your uvicorn LNbits local host IP and port
+                proxy_set_header Upgrade $http_upgrade;
+                proxy_set_header Connection 'upgrade';
+                proxy_set_header X-Forwarded-Proto https;
+                proxy_set_header Host $host;
+                proxy_http_version 1.1; # headers to ensure replies are coming back and forth through your domain
+       }
+
+        ssl_certificate /etc/letsencrypt/live/paymeinsats.duckdns.org/fullchain.pem; # Point to the fullchain.pem from Certbot 
+        ssl_certificate_key /etc/letsencrypt/live/paymeinsats.duckdns.org/privkey.pem; # Point to the private key from Certbot
+}
+```
+`CTRL-X` => `Yes` => `Enter` to save
+Next we'll test the configuration and enable it by creating a symlink from sites-available to sites-enabled.
+```
+$ sudo nginx -t
+nginx: the configuration file /etc/nginx/nginx.conf syntax is ok
+nginx: configuration file /etc/nginx/nginx.conf test is successful
+$ sudo ln -s /etc/nginx/sites-available/paymeinsats.conf /etc/nginx/sites-enabled/
+$ sudo systemctl restart nginx
+```
+
+Now the moment of truth: Go to your Website [https://paymeinsats.duckdns.org](https://paymeinsats.duckdns.org) and either celebrate 🍻 
+or troubleshoot where things could have gone wrong. 
+
+Hope you enjoyed this article. Please do share feedback and suggestions for improvement.
+If this guide was of any help, I'd appreciate if you share the article with others, give me a follow on Twitter [![Twitter URL](https://img.shields.io/twitter/url/https/twitter.com/HandsdownI.svg?style=social&label=Follow%20%40HandsdownI)](https://twitter.com/HandsdownI)
+or even donating some sats below
+
+[<img src=https://user-images.githubusercontent.com/35168804/156722937-59239884-5398-48ae-a4f2-1d6c53dfd0fb.png width="100" height="100">](https://pwbtc.duckdns.org/lnurlp/2)
+
+or via my LN-Email hakuna@btcadresse.de. I'm also always grateful for incoming channels to my node: [HODLmeTight](https://amboss.space/node/037f66e84e38fc2787d578599dfe1fcb7b71f9de4fb1e453c5ab85c05f5ce8c2e3)
+
 ## Appendix & FAQ
 
-
-
+### I see anyone can create a wallet on my LNBits service, but I don't want that. How do I change that?
+Once you have created your first user wallet, and you want only this to be accessible, go to the user-section in LNBits and notice the user-ID in the URL: `/usermanager/?usr=[32-digit-user-ID]`. Copy the user-id and add it to your `.env` file: `nano ~/lnbits-legend/.env` and add this to the variable `LNBITS_ALLOWED_USERS=""`. You can comma-seperate a list of user-ids.
