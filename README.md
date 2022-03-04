@@ -10,6 +10,38 @@ Here's my current setup shared with you, and your intend can be manyfold, you ma
 - get a domain-name or use a free-domain host such as [DuckDNS](duckdns.org) to point to your LNBits instance
 - are just curious and want to tinker around a bit, because it's good to have those skills when demand for experience continues to rise
 
+## Table of Content
+
+- [Pre-Amble](#pre-amble)
+  - [Objective](#objective)
+  - [Challenge](#challenge)
+  - [Proposed Solution](#proposed-solution)
+- [Pre-Reads](#pre-reads)
+- [Pre-Requisites](#pre-requisites)
+- [Preperations](#preperations)
+  - [Make notes](#make-notes)
+  - [Visualize](#visualize)
+  - [Secure)](#secure)
+- [Let's get started (LFG!)](#lets-get-started-lfg)
+  - [Lightning Node](#1-lightning-node)
+  - [VPS: Setup](#2-vps-setup)
+  - [VPS: Connect to your VPS and tighten it up](#3-vps-connect-to-your-vps-and-tighten-it-up)
+  - [VPS: Install OpenVPN Server](#4-vps-install-openvpn-server)
+  - [VPS: Install LNBits](#5-vps-install-lnbits)
+  - [VPS: Retrieve the OpenVPN config & certificate](#6-vps-retrieve-the-openvpn-config--certificate)
+  - [LND Node: Install and test the VPN Tunnel](#7-lnd-node-install-and-test-the-vpn-tunnel)
+  - [VPS: Add routing tables configuration into your droplet docker](#8-vps-add-routing-tables-configuration-into-your-droplet-docker)
+  - [LND Node: LND adjustments to listen and channel via VPS VPN Tunnel](#9-lnd-node-lnd-adjustments-to-listen-and-channel-via-vps-vpn-tunnel)
+  - [LND Node: Start your VPN Client again](#10-lnd-node-start-your-vpn-client-again)
+  - [LND Node: provide your VPS LNBits instance read / write access to your LND Wallet](#11-lnd-node-provide-your-vps-lnbits-instance-read--write-access-to-your-lnd-wallet)
+  - [VPS: Customize and configure LNBits to connect to your LNDRestWallet](#12-vps-customize-and-configure-lnbits-to-connect-to-your-lndrestwallet)
+  - [VPS: Start LNBits and test the LND Node wallet connection](#13-vps-start-lnbits-and-test-the-lnd-node-wallet-connection)
+  - [Your domain, Webserver and SSL setup](#14-your-domain-webserver-and-ssl-setup)
+    - [Domain](#domain)
+    - [VPS: SSL certificate](#vps-ssl-certificate)
+    - [VPS: Webserver NGINX](#vps-webserver-nginx)
+- [Appendix & FAQ](#appendix--faq)
+
 
 ## Pre-Amble
 
@@ -289,7 +321,7 @@ LND Restart to incorporate changes to `lnd.conf`
 </details>
 
 ### 10) LND Node: Start your VPN Client again
-The reboot killed your tmux session running the OpenVPN client. Remember it from [section 7)](https://github.com/TrezorHannes/vps-lnbits/edit/main/README.md#7-install-and-test-the-vpn-tunnel-on-your-lnd-node)? Here is how you restart it:
+The reboot killed your tmux session running the OpenVPN client. Remember it from [section 7)](#7-install-and-test-the-vpn-tunnel-on-your-lnd-node)? Here is how you restart it:
 ```
 $ sudo apt-get install openvpn tmux
 $ tmux new -s vps
@@ -304,7 +336,7 @@ Additional hint: The author did not test the option to run the client automatica
 Assuming LND restarted well on your LND Node, your LND is now listening and connectable via VPS Clearnet IP and Tor. That's quite an achievement already. But we want to setup LNBits as well, right? So go grab another beverage, now we'll get LNBits running.
 For that, let's climb another tricky obstacle; to respect the excellent security feats the LND engineering team has implemented. Since we don't want to rely on a custodial wallet provider, which would be super easy to add into LNBits, we have some more tinkering to do. Follow along to basically provide two things to your VPS from your LND Node. 
 
-**Note of warning again**: Both of those files are highly sensitive. Don't show them to anyone, don't transfer them via Email, just follow the secure channel below and you should be fine, as long you keep the security barriers installed in [Section "Secure"](https://github.com/TrezorHannes/vps-lnbits/edit/main/README.md#secure) intact.
+**Note of warning again**: Both of those files are highly sensitive. Don't show them to anyone, don't transfer them via Email, just follow the secure channel below and you should be fine, as long you keep the security barriers installed in [Section "Secure"](#secure) intact.
 
 1) your tls.cert. Only with access to this file, your VPS is going to be allowed to leverage your LND Wallet via Rest-API
 `scp ~/.lnd/tls.cert root@207.154.241.101:/root/` sends your LND Node tls.cert to your VPS, where we will use it in the next section.
