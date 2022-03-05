@@ -21,7 +21,7 @@ Here's my current setup shared with you, and your intend can be manyfold, you ma
 - [Preperations](#preperations)
   - [Make notes](#make-notes)
   - [Visualize](#visualize)
-  - [Secure)](#secure)
+  - [Secure](#secure)
 - [Let's get started (LFG!)](#lets-get-started-lfg)
   - [Lightning Node](#1-lightning-node)
   - [VPS: Setup](#2-vps-setup)
@@ -97,6 +97,7 @@ It goes without saying, but this guide doesn't go into the necessary security st
 
 ## Let's get started (LFG!)
 Well, let's get into it, shall we?!
+
 ### 1) Lightning Node
 We will consider you have your **Lightning Node up and running**, connected via Tor and some funds on it. You also have SSH access to it and administrative privilidges
 
@@ -112,6 +113,7 @@ In case you don't have a **VPS provider** already, sign-up with [my referal](htt
    - [ ] Lastly, chose a tacky hostname, something which resonates with you, eg myLNBits-VPS
 
 After a few magic cloud things happening, you have your Droplet initiated and it provides you with a public IPv4 Adress. Add it to your notes! In this guide, I'll refer to it as `VPS Public IP: 207.154.241.101`
+
 
 ### 3) VPS: Connect to your VPS and tighten it up
 Connect to your VPS via `SSH root@207.154.241.101` and you will be welcomed on your new, remote server. Next steps are critical to do right away, harden your setup:
@@ -163,10 +165,15 @@ $ pipenv run python -m uvicorn lnbits.__main__:app
 ```
 Now when this is successfully starting, you can abort with CTRL-C. We will come back to this for further configuration editing LNBits' config-file to our desired setup.
 
+
 ### 6) VPS: Retrieve the OpenVPN config & certificate
 In this section we'll switch our work from setting up the server towards getting your LND node ready to connect to the tunnel. For this, we will retrieve and transfer the configuration file from your VPS to your node.
    - [ ] `docker run -v $OVPN_DATA:/etc/openvpn --rm -it kylemanna/openvpn easyrsa build-client-full NODE-NAME nopass` whereby `NODE-NAME` should be changed to a unique identifier you chose. For example, if your LND Node is called "BringMeSomeSats", I suggest to use that - with all lowercase.
    - [ ] `docker run -v $OVPN_DATA:/etc/openvpn --rm kylemanna/openvpn ovpn_getclient NODE-NAME > NODE-NAME.ovpn` which will prompt you to provide the secure password you have generated earlier. Afterwards, it'll store `bringmesomesats.ovpn` in the directory you currently are.
+
+
+## Into the Tunnel
+We have installed the tunnel through the mountain, but need to get our LND Node to use it.
 
 ### 7) LND Node: Install and test the VPN Tunnel
 Now switch to another terminal window, and SSH into your **Lightning Node**. We want to connect to the VPS and retrieve the VPN-Config file, to be able to establish the tunnel
@@ -320,6 +327,7 @@ LND Restart to incorporate changes to `lnd.conf`
 </p>
 </details>
 
+
 ### 10) LND Node: Start your VPN Client again
 The reboot killed your tmux session running the OpenVPN client. Remember it from [section 7](#7-lnd-node-install-and-test-the-vpn-tunnel)? Here is how you restart it:
 ```
@@ -330,6 +338,10 @@ $ sudo openvpn --config /home/admin/VPNcert/bringmesomesats.ovpn
 `CTRL-B + CTRL-D`
 
 Additional hint: The author did not test the option to run the client automatically via systemctl. If you want to add this to be more independent from node starts, follow the guide to [add the autostart here](https://www.ivpn.net/knowledgebase/linux/linux-autostart-openvpn-in-systemd-ubuntu/).
+
+
+## Connect VPS LNBits to your LND Node
+The traffic line between the two connection points is established. Worth noting that this can be extended: In case you run more than one node, just repeat the steps above for additional clients. Now, let's get LNBits talk to your node.
 
 
 ### 11) LND Node: provide your VPS LNBits instance read / write access to your LND Wallet
@@ -343,6 +355,7 @@ For that, let's climb another tricky obstacle; to respect the excellent security
 
 2) your admin.macaroon. Only with that, your VPS can send and receive payments
 `xxd -ps -u -c ~/.lnd/data/chain/bitcoin/mainnet/admin.macaroon` will provide you with a long, hex-encoded string. Keep that terminal window open, since we need to copy that code and use it in our next step on the VPS.
+
 
 ### 12) VPS: Customize and configure LNBits to connect to your LNDRestWallet
  Now since we're back in the VPS terminal, keep your LND Node Terminal open. We'll adjust the LNBits environment settings, and we'll distinguish between _necessary_ and _optional_ adjustments. First, send the following commands:
@@ -373,6 +386,7 @@ Worth noting, that the directory `data` will hold all your database SQLite3 file
  | `LNBITS_THEME_OPTIONS="classic, bitcoin, flamingo, mint, autumn, monochrome, salvador"` | Provide different color themes, or keep it simple |
  `CTRL-X` => `Yes` => `Enter` to save
  
+ 
  ### 13) VPS: Start LNBits and test the LND Node wallet connection
  As soon you got here, we got the most complex things done 💪. The next few steps will be a walk in the park. Get another beverage, and then start LNBits again in your tmux-environment
 ```
@@ -388,6 +402,7 @@ See further uvicorn startup options [listed here](https://www.uvicorn.org/deploy
 If you see your own LNBits instance, with all your _Optional Adjustments_ added, we'll go to the last, final endboss. 
 
 [^1]: To remove the ufw setting - we don't want to expose any unnecessary ports - call `sudo ufw status numbered`, followed by `sudo ufw delete #number` of the two port 8000 entries.
+
 
 ### 14) Your domain, Webserver and SSL setup
 We don't want to share our IP-Adress for others to pay us, a domain name is a much better brand. And we want to keep it secure, so we need to get us an SSL certificate. Good for you, both options are available for free, just needs some further work.
@@ -473,7 +488,7 @@ $ sudo systemctl restart nginx
 ```
 
 Now the moment of truth: Go to your Website [https://paymeinsats.duckdns.org](https://paymeinsats.duckdns.org) and either celebrate 🍻 
-or troubleshoot where things could have gone wrong. 
+or troubleshoot where things could have gone wrong. If the former: Congratulations - you made it!
 
 Hope you enjoyed this article. Please do share feedback and suggestions for improvement.
 If this guide was of any help, I'd appreciate if you share the article with others, give me a follow on Twitter [![Twitter URL](https://img.shields.io/twitter/url/https/twitter.com/HandsdownI.svg?style=social&label=Follow%20%40HandsdownI)](https://twitter.com/HandsdownI)
@@ -483,16 +498,20 @@ or even donating some sats below
 
 or via my LN-Email hakuna@btcadresse.de. I'm also always grateful for incoming channels to my node: [HODLmeTight](https://amboss.space/node/037f66e84e38fc2787d578599dfe1fcb7b71f9de4fb1e453c5ab85c05f5ce8c2e3)
 
+
 ## Appendix & FAQ
 
-### I see anyone can create a wallet on my LNBits service, but I don't want that. How do I change that?
+#### I see anyone can create a wallet on my LNBits service, but I don't want that. How do I change that?
 Once you have created your first user wallet, and you want only this to be accessible, go to the user-section in LNBits and notice the user-ID in the URL: `/usermanager/?usr=[32-digit-user-ID]`. Copy the user-id and add it to your `.env` file: `nano ~/lnbits-legend/.env` and add this to the variable `LNBITS_ALLOWED_USERS=""`. You can comma-seperate a list of user-ids.
 
-### I'm stuck and have no idea why it's not working. Who can help?
+#### I'm stuck and have no idea why it's not working. Who can help?
 Please add an issue on Github with your question and provide as much detail as possible. Keep it safe though, no macaroon or user-ids!
 
-### So I have LNBits running, now what?
+#### So I have LNBits running, now what?
 Head over to [LNBits Website](https://lnbits.com/) and check out the plethora of options you could do. For instance, I've built a donation wallet, which is shared 50:50 between the main author and my own wallet. All automated.
 
-### Why DigitalOcean - can't we pick a VPS where we can pay with Lightning, and anonymously
-Consider this guide a work-in-progress. I've picked DigitalOcean since I know what I'm doing there. Will add alternative or even better options once I've done some thorough test myself how to accomplish the same results. Fee free to provide suggestions here.
+#### Why DigitalOcean - can't we pick a VPS where we can pay with Lightning, and anonymously
+Consider this guide a work-in-progress. I've picked DigitalOcean since I know what I'm doing there. Heard good things about [Luna Node](https://www.lunanode.com/), it's cheaper and you can pay with sats, so will test this out next. Also happy to add further alternatives, leave comments if you think these can accomplish the same results. Fee free to provide suggestions here.
+
+#### Can I add more nodes connecting to the tunnel? If so, how?
+In fact, I have more than one node connected to the tunnel. You need to handle your port-forwarding appropriately, since every node needs their unique LND listen port. Eg Node 1 has 9735, Node 2 9736 and so on. Docker runs need to be called with further `-p for publish-options`, IPtable rules and UFW needs to be adjusted. But once you got this guide internalised, the principle should be clear. Otherwise, let me know.
