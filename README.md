@@ -91,7 +91,7 @@ Suggested Laundry-List, you can tick them off while you go through this guide
 
 ### Visualize
 Some of us are visual people. Draw your diagram to get an idea how you want things to flow
-[![Hight-lvl-Flowchart](https://github.com/TrezorHannes/vps-lnbits/blob/main/Untitled%20Diagram.drawio.png?raw=true)
+![Hight-lvl-Flowchart](https://github.com/TrezorHannes/vps-lnbits/blob/main/VPN_LNBits.png?raw=true)
 
 ### Secure
 It goes without saying, but this guide doesn't go into the necessary security steps in detail, and can't take on liability for any things breaking or losing funds. Ensure you don't get reckless, start with small funds you're ok to lose. Keep an eye on developments or in touch with the active Telegram Groups, to get news and updates with low delays. Also, would recommend to do those steps with a peer, so you follow a second pair of eye review. Lastly, 2fa / yubikeys are your friends!
