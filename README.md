@@ -119,7 +119,7 @@ After a few magic cloud things happening, you have your Droplet initiated and it
 ### 3) VPS: Connect to your VPS and tighten it up
 Connect to your VPS via `SSH root@207.154.241.101` and you will be welcomed on your new, remote server. Next steps are critical to do right away, harden your setup:
    - [ ] Update your packages: `apt-get update` and `apt-get upgrade`
-   - [ ] Install Docker: `apt-get install docker.io`
+   - [ ] Install Docker: `apt-get install docker.io tmux`
    - [ ] Enable Docker automated start: `systemctl start docker.service`
    - [ ] Enable Uncomplicated Firewall (UFW) and add ports to be allowed to connected to: 
 ```
