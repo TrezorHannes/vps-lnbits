@@ -33,12 +33,11 @@ Here's my current setup shared with you, and your intend can be manyfold, you ma
   - [7) LND Node: Install and test the VPN Tunnel](#7-lnd-node-install-and-test-the-vpn-tunnel)
   - [8) VPS: Add routing tables configuration into your droplet docker](#8-vps-add-routing-tables-configuration-into-your-droplet-docker)
   - [9) LND Node: LND adjustments to listen and channel via VPS VPN Tunnel](#9-lnd-node-lnd-adjustments-to-listen-and-channel-via-vps-vpn-tunnel)
-  - [10) LND Node: Start your VPN Client again](#10-lnd-node-start-your-vpn-client-again)
 - [Connect VPS LNBits to your LND Node](#connect-vps-lnbits-to-your-lnd-node)
-  - [11) LND Node: provide your VPS LNBits instance read / write access to your LND Wallet](#11-lnd-node-provide-your-vps-lnbits-instance-read--write-access-to-your-lnd-wallet)
-  - [12) VPS: Customize and configure LNBits to connect to your LNDRestWallet](#12-vps-customize-and-configure-lnbits-to-connect-to-your-lndrestwallet)
-  - [13) VPS: Start LNBits and test the LND Node wallet connection](#13-vps-start-lnbits-and-test-the-lnd-node-wallet-connection)
-  - [14) Your domain, Webserver and SSL setup](#14-your-domain-webserver-and-ssl-setup)
+  - [10) LND Node: provide your VPS LNBits instance read / write access to your LND Wallet](#10-lnd-node-provide-your-vps-lnbits-instance-read--write-access-to-your-lnd-wallet)
+  - [11) VPS: Customize and configure LNBits to connect to your LNDRestWallet](#11-vps-customize-and-configure-lnbits-to-connect-to-your-lndrestwallet)
+  - [12) VPS: Start LNBits and test the LND Node wallet connection](#12-vps-start-lnbits-and-test-the-lnd-node-wallet-connection)
+  - [13) Your domain, Webserver and SSL setup](#13-your-domain-webserver-and-ssl-setup)
     - [Domain](#domain)
     - [VPS: SSL certificate](#vps-ssl-certificate)
     - [VPS: Webserver NGINX](#vps-webserver-nginx)
@@ -120,7 +119,7 @@ After a few magic cloud things happening, you have your Droplet initiated and it
 ### 3) VPS: Connect to your VPS and tighten it up
 Connect to your VPS via `SSH root@207.154.241.101` and you will be welcomed on your new, remote server. Next steps are critical to do right away, harden your setup:
    - [ ] Update your packages: `apt-get update` and `apt-get upgrade`
-   - [ ] Install Docker & tmux: `apt-get install docker.io tmux`
+   - [ ] Install Docker: `apt-get install docker.io`
    - [ ] Enable Docker automated start: `systemctl start docker.service`
    - [ ] Enable Uncomplicated Firewall (UFW) and add ports to be allowed to connected to: 
 ```
@@ -184,36 +183,45 @@ $ cd ~
 $ mkdir VPNcert
 $ scp user@207.154.241.101:/home/user/bringmesomesats.ovpn /home/admin/VPNcert/
 $ chmod 600 /home/admin/VPNcert/bringmesomesats.ovpn
+$ sudo cp -p /home/admin/VPNcert/bringmesomesats.ovpn /etc/openvpn/CERT.conf
 ```
-_Note: You need to adjust `user`, the **VPS Public IP** and the absolute directory where the ovpn file is stored. Also make sure you are concious where you place this file on your LND Node, because we need it later._
+_Note: You need to adjust `user`, the **VPS Public IP** and the absolute directory where the ovpn file is stored. We keep a copy of the cert file in the home directory for backup, but the actual file we use is `CERT.conf`._
 
-So we have config file, secured in a directory, now we need to install OpenVPN & Tmux, start it up to see if it works. Tmux is a program allowing you to run services in the background. So even once you close the terminal, your OpenVPN Client will continue to run the tunnel. Read about [Tmux short-cuts here](https://tmuxcheatsheet.com/), or use alternatives like [screen](https://linuxize.com/post/how-to-use-linux-screen/).
+Now we need to install OpenVPN, start it up to see if it works.
 
 **Important Warning**: Depending on your network-setup, there is a slight chance your LND Node Service gets interrupted. Be aware there might be small down-times of your lightning node, as we will reconfigure things. Be patient!
 
 ```
-$ sudo apt-get install openvpn tmux
-$ tmux new -s vps
-$ sudo openvpn --config /home/admin/VPNcert/bringmesomesats.ovpn
+$ sudo apt-get install openvpn
+$ sudo systemctl enable openvpn@CERT
+$ sudo systemctl start openvpn@CERT
 ```
 You should see something similiar to the following output. Note this one line indicating the next important IP Adress `VPN Client IP: 192.168.255.6`. Make a note of it, we need it for port-configuration at the server, soon.
 ```
-2022-03-02 17:38:10 library versions: OpenSSL 1.1.1k  25 Mar 2021, LZO 2.10
-2022-03-02 17:38:10 TCP/UDP: Preserving recently used remote address: [AF_INET]207.154.241.101:1194
-2022-03-02 17:38:10 UDP link local: (not bound)
-2022-03-02 17:38:10 UDP link remote: [AF_INET]207.154.241.101:1194
-2022-03-02 17:38:11 WARNING: 'link-mtu' is used inconsistently, local='link-mtu 1541', remote='link-mtu 1542'
-2022-03-02 17:38:11 WARNING: 'comp-lzo' is present in remote config but missing in local config, remote='comp-lzo'
-2022-03-02 17:38:11 [207.154.241.101] Peer Connection Initiated with [AF_INET]207.154.241.101:1194
-2022-03-02 17:38:12 Options error: Unrecognized option or missing or extra parameter(s) in [PUSH-OPTIONS]:1: block-outside-dns (2.5.1)
-2022-03-02 17:38:12 TUN/TAP device tun0 opened
-2022-03-02 17:38:12 net_iface_mtu_set: mtu 1500 for tun0
-2022-03-02 17:38:12 net_iface_up: set tun0 up
-2022-03-02 17:38:12 net_addr_ptp_v4_add: 192.168.255.6 peer 192.168.255.5 dev tun0
-2022-03-02 17:38:12 WARNING: this configuration may cache passwords in memory -- use the auth-nocache option to prevent this
-2022-03-02 17:38:12 Initialization Sequence Completed
+* openvpn@CERT.service - OpenVPN connection to CERT
+     Loaded: loaded (/lib/systemd/system/openvpn@.service; enabled; vendor preset: enabled)
+     Active: active (running) since Wed 2022-04-06 13:11:13 CEST; 4s ago
+       Docs: man:openvpn(8)
+             https://community.openvpn.net/openvpn/wiki/Openvpn24ManPage
+             https://community.openvpn.net/openvpn/wiki/HOWTO
+   Main PID: 1514818 (openvpn)
+     Status: "Initialization Sequence Completed"
+      Tasks: 1 (limit: 18702)
+     Memory: 1.0M
+        CPU: 49ms
+     CGroup: /system.slice/system-openvpn.slice/openvpn@CERT.service
+             `-1514818 /usr/sbin/openvpn --daemon ovpn-CERT --status /run/openvpn/CERT.status 10 --cd /etc/openvpn --config /etc/openvpn/CERT.conf --writepid /run/openvpn/CERT.pid
+
+Apr 06 13:11:13 debian-nuc ovpn-CERT[1514818]: WARNING: 'link-mtu' is used inconsistently, local='link-mtu 1541', remote='link-mtu 1542'
+Apr 06 13:11:13 debian-nuc ovpn-CERT[1514818]: WARNING: 'comp-lzo' is present in remote config but missing in local config, remote='comp-lzo'
+Apr 06 13:11:13 debian-nuc ovpn-CERT[1514818]: [207.154.241.101] Peer Connection Initiated with [AF_INET]207.154.241.101:1194
+Apr 06 13:11:14 debian-nuc ovpn-CERT[1514818]: TUN/TAP device tun0 opened
+Apr 06 13:11:14 debian-nuc ovpn-CERT[1514818]: net_iface_mtu_set: mtu 1500 for tun0
+Apr 06 13:11:14 debian-nuc ovpn-CERT[1514818]: net_iface_up: set tun0 up
+Apr 06 13:11:14 debian-nuc ovpn-CERT[1514818]: net_addr_ptp_v4_add: 192.168.255.6 peer 192.168.255.5 dev tun0
 ```
-The tunnel between your LND Node and your VPS VPN is established. We can place the VPN client into the background with `CTRL-B + CTRL-D`, which need to be pressed quickly after each other. You'll be out of the tmux session now, if you are curious if things still run, do `tmux a -t vps`, and do `CTRL-B + CTRL-D` to detach it again.
+The tunnel between your LND Node and your VPS VPN is established. If you need to troubleshoot, call the systemctl journal via 
+`sudo journalctl -u openvpn@CERT -f --since "1 hour ago"`
 
 
 ### 8) VPS: Add routing tables configuration into your droplet docker
@@ -330,23 +338,11 @@ LND Restart to incorporate changes to `lnd.conf`
 </details>
 
 
-### 10) LND Node: Start your VPN Client again
-The reboot killed your tmux session running the OpenVPN client. Remember it from [section 7](#7-lnd-node-install-and-test-the-vpn-tunnel)? Here is how you restart it:
-```
-$ sudo apt-get install openvpn tmux
-$ tmux new -s vps
-$ sudo openvpn --config /home/admin/VPNcert/bringmesomesats.ovpn
-```
-`CTRL-B + CTRL-D`
-
-Additional hint: The author did not test the option to run the client automatically via systemctl. If you want to add this to be more independent from node starts, follow the guide to [add the autostart here](https://www.ivpn.net/knowledgebase/linux/linux-autostart-openvpn-in-systemd-ubuntu/).
-
-
 ## Connect VPS LNBits to your LND Node
 The traffic line between the two connection points is established. Worth noting that this can be extended: In case you run more than one node, just repeat the steps above for additional clients. Now, let's get LNBits talk to your node.
 
 
-### 11) LND Node: provide your VPS LNBits instance read / write access to your LND Wallet
+### 10) LND Node: provide your VPS LNBits instance read / write access to your LND Wallet
 Assuming LND restarted well on your LND Node, your LND is now listening and connectable via VPS Clearnet IP and Tor. That's quite an achievement already. But we want to setup LNBits as well, right? So go grab another beverage, now we'll get LNBits running.
 For that, let's climb another tricky obstacle; to respect the excellent security feats the LND engineering team has implemented. Since we don't want to rely on a custodial wallet provider, which would be super easy to add into LNBits, we have some more tinkering to do. Follow along to basically provide two things to your VPS from your LND Node. 
 
@@ -359,7 +355,7 @@ For that, let's climb another tricky obstacle; to respect the excellent security
 `xxd -ps -u -c ~/.lnd/data/chain/bitcoin/mainnet/admin.macaroon` will provide you with a long, hex-encoded string. Keep that terminal window open, since we need to copy that code and use it in our next step on the VPS.
 
 
-### 12) VPS: Customize and configure LNBits to connect to your LNDRestWallet
+### 11) VPS: Customize and configure LNBits to connect to your LNDRestWallet
  Now since we're back in the VPS terminal, keep your LND Node Terminal open. We'll adjust the LNBits environment settings, and we'll distinguish between _necessary_ and _optional_ adjustments. First, send the following commands:
 ```
 $ cd lnbits-legend
@@ -389,7 +385,7 @@ Worth noting, that the directory `data` will hold all your database SQLite3 file
  `CTRL-X` => `Yes` => `Enter` to save
  
  
- ### 13) VPS: Start LNBits and test the LND Node wallet connection
+ ### 12) VPS: Start LNBits and test the LND Node wallet connection
  As soon you got here, we got the most complex things done 💪. The next few steps will be a walk in the park. Get another beverage, and then start LNBits again in your tmux-environment
 ```
 $ tmux new -s lnbits
@@ -406,7 +402,7 @@ If you see your own LNBits instance, with all your _Optional Adjustments_ added,
 [^1]: To remove the ufw setting - we don't want to expose any unnecessary ports - call `sudo ufw status numbered`, followed by `sudo ufw delete #number` of the two port 8000 entries.
 
 
-### 14) Your domain, Webserver and SSL setup
+### 13) Your domain, Webserver and SSL setup
 We don't want to share our IP-Adress for others to pay us, a domain name is a much better brand. And we want to keep it secure, so we need to get us an SSL certificate. Good for you, both options are available for free, just needs some further work.
 
 #### Domain
