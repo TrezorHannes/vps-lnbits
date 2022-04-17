@@ -494,7 +494,7 @@ or even donating some sats below
 
 [<img src=https://user-images.githubusercontent.com/35168804/156722937-59239884-5398-48ae-a4f2-1d6c53dfd0fb.png width="100" height="100">](https://pwbtc.duckdns.org/lnurlp/2)
 
-or via my LN-Email hakuna@btcadresse.de. I'm also always grateful for incoming channels to my node: [HODLmeTight](https://amboss.space/node/037f66e84e38fc2787d578599dfe1fcb7b71f9de4fb1e453c5ab85c05f5ce8c2e3)
+I'm also always grateful for incoming channels to my node: [HODLmeTight](https://amboss.space/node/037f66e84e38fc2787d578599dfe1fcb7b71f9de4fb1e453c5ab85c05f5ce8c2e3)
 
 
 ## Appendix & FAQ
