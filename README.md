@@ -183,7 +183,6 @@ $ cd ~
 $ mkdir VPNcert
 $ scp user@207.154.241.101:/home/user/bringmesomesats.ovpn /home/admin/VPNcert/
 $ chmod 600 /home/admin/VPNcert/bringmesomesats.ovpn
-$ sudo cp -p /home/admin/VPNcert/bringmesomesats.ovpn /etc/openvpn/CERT.conf
 ```
 _Note: You need to adjust `user`, the **VPS Public IP** and the absolute directory where the ovpn file is stored. We keep a copy of the cert file in the home directory for backup, but the actual file we use is `CERT.conf`._
 
@@ -193,6 +192,7 @@ Now we need to install OpenVPN, start it up to see if it works.
 
 ```
 $ sudo apt-get install openvpn
+$ sudo cp -p /home/admin/VPNcert/bringmesomesats.ovpn /etc/openvpn/CERT.conf
 $ sudo systemctl enable openvpn@CERT
 $ sudo systemctl start openvpn@CERT
 ```
