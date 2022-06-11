@@ -7,7 +7,7 @@ Here's my current setup shared with you, and your intend can be manyfold, you ma
 - want to hide your home IP from the world, for whatever reason
 - desire to decrease your Lightning Node HTLC Routing times, so instead of running Tor only, you want Clearnet availability, too
 - want others to leverage the LN Services you want to offer, via LNBits, BTCPay or others
-- get a domain-name or use a free-domain host such as [DuckDNS](duckdns.org) to point to your LNBits instance
+- get a domain-name or use a free-domain host such as [DuckDNS](https://www.duckdns.org/) to point to your LNBits instance
 - are just curious and want to tinker around a bit, because it's good to have those skills when demand for experience continues to rise
 
 ## Table of Content
