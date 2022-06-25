@@ -158,11 +158,10 @@ Since we assume you have followed the hardening guide above to add additional us
 $ sudo apt-get install git
 $ git clone https://github.com/lnbits/lnbits-legend
 $ sudo apt update
-$ sudo apt install pipenv
-$ cd lnbits-legend
-$ pipenv --python 3.9 shell
-$ pipenv run pip install -r requirements.txt
-$ pipenv run python -m uvicorn lnbits.__main__:app
+# ensure you have virtualenv installed, on debian/ubuntu 'apt install python3-venv' should work
+$ python3 -m venv venv
+$ ./venv/bin/pip install -r requirements.txt
+$ ./venv/bin/uvicorn lnbits.__main__:app --port 5000
 ```
 Now when this is successfully starting, you can abort with CTRL-C. We will come back to this for further configuration editing LNBits' config-file to our desired setup.
 
@@ -233,7 +232,7 @@ Back to your terminal window connected to your VPS. We have the `VPN Client IP: 
 ```
 $ iptables -A PREROUTING -t nat -i eth0 -p tcp -m tcp --dport 9735 -j DNAT --to 192.168.255.6:9735
 $ iptables -A PREROUTING -t nat -i eth0 -p udp -m udp --dport 9735 -j DNAT --to 192.168.255.6:9735
-$ iptables -A PREROUTING -t nat -i eth0 -p tcp -m tcp --dport 18080 -j DNAT --to 192.168.255.6:8080
+$ iptables -A PREROUTING -t nat -i eth0 -p tcp -m tcp --dport 8080 -j DNAT --to 192.168.255.6:8080
 $ iptables -t nat -A POSTROUTING -d 192.168.255.0/24 -o tun0 -j MASQUERADE
 $ exit
 ```
@@ -371,7 +370,7 @@ Worth noting, that the directory `data` will hold all your database SQLite3 file
  | --- | --- |
  | `LNBITS_DATA_FOLDER="/user/lnbits-legend/data"` | enter the absolute path to the data folder you created above | 
  | `LNBITS_BACKEND_WALLET_CLASS=LndRestWallet` | Specify that we want to use our LND Node Wallet Rest-API
- | `LND_REST_ENDPOINT="https://172.17.0.2:8080"` | Add your `VPS Docker IP: 172.17.0.2` on port 8080 | 
+ | `LND_REST_ENDPOINT="https://172.17.0.1:8080"` | Add your `VPS Docker IP: 172.17.0.1` on port 8080 | 
  | `LND_REST_CERT="/root/tls.cert"` | Add the link to the tls.cert file copied over earlier | 
  | `LND_REST_MACAROON="HEXSTRING"` | Copy the hex-encoded snippet from your LND Node Terminal output from Section 11.2 in here | 
  
@@ -390,12 +389,11 @@ Worth noting, that the directory `data` will hold all your database SQLite3 file
 ```
 $ tmux new -s lnbits
 $ cd ~/lnbits-legend
-$ pipenv --python 3.9 shell
-$ pipenv run python -m uvicorn lnbits.__main__:app --host 0.0.0.0
+$ ./venv/bin/uvicorn lnbits.__main__:app --port 5000
 ```
-Back into the background with `CTRL-B + CTRL-D`
+When this is successful, it'll report your wallet balance of your node, and you can move on. If not, a good debugging approach is to connect from the VPS to your node via `curl https://172.17.0.1:8080 -v --cacert /root/tls.cert`. 
 
-See further uvicorn startup options [listed here](https://www.uvicorn.org/deployment/), but with our slightly adjusted default settings, LNBits should now be running and listening on all incoming requests on port 8000. If you're impatient, add a temporary[^1] ufw exception to test it: `sudo ufw allow 8000/tcp comment 'temporary lnbits check'` and open the corresponding `VPS Public IP: 207.154.241.101:8000`. 
+CTRL-C to cancel if successful, and follow the guide here to add lnbits-startup to systemd. This will allow an automated restart [LNBits further documentation](https://github.com/lnbits/lnbits-legend/blob/main/docs/guide/installation.md#additional-guides), but with our slightly adjusted default settings, LNBits should now be running and listening on all incoming requests on port 8000. If you're impatient, add a temporary[^1] ufw exception to test it: `sudo ufw allow 8000/tcp comment 'temporary lnbits check'` and open the corresponding `VPS Public IP: 207.154.241.101:8000`. 
 
 If you see your own LNBits instance, with all your _Optional Adjustments_ added, we'll go to the last, final endboss. 
 
