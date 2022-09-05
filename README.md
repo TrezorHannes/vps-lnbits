@@ -141,7 +141,7 @@ Now we will get OpenVPN installed, but using a Docker Setup like [Krypto4narchis
    - [ ] `docker volume create --name $OVPN_DATA` notice how the $ indicates picking up the placeholder you have defined above
    - [ ] `docker run -v $OVPN_DATA:/etc/openvpn --rm kylemanna/openvpn ovpn_genconfig -u udp://207.154.241.101`, whereby you need to adjust the 207.154.241.101 with your own **VPS Public IP**.
    - [ ] `docker run -v $OVPN_DATA:/etc/openvpn --rm -it kylemanna/openvpn ovpn_initpki` this generates the necessary VPN certificate password. Take your password manager and create a secure pwd, which you will store safely. It will be needed once we create client-configuration files for your node to connect later.
-   - [ ] `docker run -v $OVPN_DATA:/etc/openvpn -d -p 1194:1194/udp -p 9735:9735 -p 9735:9735/udp -p 8080:8080 -p 8080:8080/udp --cap-add=NET_ADMIN kylemanna/openvpn` this works under two assumptions. If any of those aren't true, you need to adjust your settings, either on your node, or by starting the docker container with different ports: 
+   - [ ] `docker run -v $OVPN_DATA:/etc/openvpn -d -p 1194:1194/udp -p 9735:9735 -p 8080:8080 --cap-add=NET_ADMIN kylemanna/openvpn` this works under two assumptions. If any of those aren't true, you need to adjust your settings, either on your node, or by starting the docker container with different ports: 
      1) your current LND Node configuration is listening on port 9735, which you can verify by looking into your `cat ~/.lnd/lnd.conf` => `[Application Options]` => `listen=0.0.0.0:9735`
      2) your LND RestLNDWallet is listening on port 8080, same location under `[Application Options]` => `restlisten=0.0.0.0:8080`
 
@@ -231,13 +231,25 @@ Back to your terminal window connected to your VPS. We have the `VPN Client IP: 
 
 ```
 $ iptables -A PREROUTING -t nat -i eth0 -p tcp -m tcp --dport 9735 -j DNAT --to 192.168.255.6:9735
-$ iptables -A PREROUTING -t nat -i eth0 -p udp -m udp --dport 9735 -j DNAT --to 192.168.255.6:9735
 $ iptables -A PREROUTING -t nat -i eth0 -p tcp -m tcp --dport 8080 -j DNAT --to 192.168.255.6:8080
 $ iptables -t nat -A POSTROUTING -d 192.168.255.0/24 -o tun0 -j MASQUERADE
 $ exit
 ```
-What we basically do here, is assign a ruleset to say: As soon a packet arrives at device `eth0` on `port 9735/udp` and `/tcp`, forward it to the `VPN client` at `192.168.255.6:9735`, and vice versa everything at device `tun0`. If you have different ports or IPs, please make adjustments accordingly. What you also see, is a port `8080` preperation for LNBits packets, we'll get to this later.
+What we basically do here, is assign a ruleset to say: As soon a packet arrives at device `eth0` on `port 9735/tcp`, forward it to the `VPN client` at `192.168.255.6:9735`, and vice versa everything at device `tun0`. If you have different ports or IPs, please make adjustments accordingly. What you also see, is a port `8080` preperation for LNBits packets, we'll get to this later.
 
+#### Permanent saving of IPtable rules
+Your VPS needs operational maintenance, and a reboot sometimes isn't avoidable. If you want to make the above iptable entries permanent, follow these steps:
+
+   - [Follow this step again](#4-vps-install-openvpn-server) to get into the container,  arrow-up on your keyboard, or do `docker ps` and `docker exec -it <CONTAINER-ID> sh`
+   - within the container, change the directory `cd /etc/openvpn` and open the environment-settings file for OpenVPN via `vi ovpn_env.sh`. Nano isn't installed in the docker container,  follow the [vi-cheatsheet PDF](https://www.atmos.albany.edu/daes/atmclasses/atm350/vi_cheat_sheet.pdf) if you get confused (and you will). Add the following lines to the file
+
+```
+$ iptables -A PREROUTING -t nat -i eth0 -p tcp -m tcp --dport 9735 -j DNAT --to 192.168.255.6:9735
+$ iptables -A PREROUTING -t nat -i eth0 -p tcp -m tcp --dport 8080 -j DNAT --to 192.168.255.6:8080
+$ iptables -t nat -A POSTROUTING -d 192.168.255.0/24 -o tun0 -j MASQUERADE
+$ exit
+```
+save with `:wq` and now your VPS adheres to those rules after a reboot, too.
 
 ### 9) LND Node: LND adjustments to listen and channel via VPS VPN Tunnel
 We switch Terminal windows again, going back to your LND Node. A quick disclaimer again, since we are fortunate enough to have plenty of good LND node solutions out there, we cannot cater for every configuration out there. Feel free to leave comments or log issues if you get stuck for your node, we'll be looking at the two most different setups here. But this should work very similar on _MyNode_, _Raspibolt_ or _Citadel_.
