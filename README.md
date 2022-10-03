@@ -270,7 +270,7 @@ _Adjust ports and IPs accordingly!_
    | --- | --- |
    | `externalip=207.154.241.101:9735`           | # to add your VPS Public-IP |
    | `nat=false`                                 | # deactivate NAT |
-   | `tlsextraip=10.8.0.2`                     | # allow later LNbits-access to your rest-wallet API |
+   | `tlsextraip=172.17.0.2`                     | # allow later LNbits-access to your rest-wallet API |
 
 [**tor**]
    | Command | Description |
@@ -307,7 +307,7 @@ LND Systemd Startup adjustment
    | --- | --- |
    | `externalip=207.154.241.101:9735`           | # to add your VPS Public-IP |
    | `nat=false`                                 | # deactivate NAT |
-   | `tlsextraip=10.8.0.2`                     | # allow later LNbits-access to your rest-wallet API |
+   | `tlsextraip=172.17.0.2`                     | # allow later LNbits-access to your rest-wallet API |
 
 [**tor**]
    | Command | Description |
@@ -354,7 +354,7 @@ LND Systemd Startup adjustment
    | --- | --- |
    | `externalip=207.154.241.101:9735`           | # to add your VPS Public-IP |
    | `nat=false`                                 | # deactivate NAT |
-   | `tlsextraip=10.8.0.2`                     | # allow later LNbits-access to your rest-wallet API |
+   | `tlsextraip=172.17.0.2`                     | # allow later LNbits-access to your rest-wallet API |
 
 [**tor**]
    | Command | Description |
@@ -407,7 +407,7 @@ LND Systemd Startup adjustment
    | --- | --- |
    | `externalip=207.154.241.101:9735` | # to add your VPS Public-IP | 
    | `nat=false`                       | # deactivate NAT | 
-   | `tlsextraip=10.8.0.2`           | # allow later LNbits-access to your rest-wallet API | 
+   | `tlsextraip=172.17.0.2`           | # allow later LNbits-access to your rest-wallet API | 
 
 [**tor**]
    | Command | Description |
@@ -445,7 +445,7 @@ LND Restart to incorporate changes to `lnd.conf`
    | --- | --- |
    | `externalip=207.154.241.101:9735` | # to add your VPS Public-IP | 
    | `nat=false`                       | # deactivate NAT | 
-   | `tlsextraip=10.8.0.2`           | # allow later LNbits-access to your rest-wallet API | 
+   | `tlsextraip=172.17.0.2`           | # allow later LNbits-access to your rest-wallet API | 
 
 [**tor**]
    | Command | Description |
@@ -528,11 +528,11 @@ $ ./venv/bin/uvicorn lnbits.__main__:app --port 5000
 ```
 When this is successful, it'll report your wallet balance of your node, and you can move on. If not, a good debugging approach is to connect from the VPS to your node via `curl https://172.17.0.1:8080 -v --cacert /root/tls.cert`. 
 
-CTRL-C to cancel if successful, and follow the guide here to add lnbits-startup to systemd. This will allow an automated restart [LNBits further documentation](https://github.com/lnbits/lnbits-legend/blob/main/docs/guide/installation.md#additional-guides), but with our slightly adjusted default settings, LNBits should now be running and listening on all incoming requests on port 8000. If you're impatient, add a temporary[^1] ufw exception to test it: `sudo ufw allow 8000/tcp comment 'temporary lnbits check'` and open the corresponding `VPS Public IP: 207.154.241.101:8000`. 
+CTRL-C to cancel if successful, and follow the guide here to add lnbits-startup to systemd. This will allow an automated restart [LNBits further documentation](https://github.com/lnbits/lnbits-legend/blob/main/docs/guide/installation.md#additional-guides), but with our slightly adjusted default settings, LNBits should now be running and listening on all incoming requests on port 5000. If you're impatient, add a temporary[^1] ufw exception to test it: `sudo ufw allow 5000/tcp comment 'temporary lnbits check'` and open the corresponding `VPS Public IP: 207.154.241.101:5000`. 
 
 If you see your own LNBits instance, with all your _Optional Adjustments_ added, we'll go to the last, final endboss. 
 
-[^1]: To remove the ufw setting - we don't want to expose any unnecessary ports - call `sudo ufw status numbered`, followed by `sudo ufw delete #number` of the two port 8000 entries.
+[^1]: To remove the ufw setting - we don't want to expose any unnecessary ports - call `sudo ufw status numbered`, followed by `sudo ufw delete #number` of the two port 5000 entries.
 
 
 ### Your domain, Webserver and SSL setup
@@ -596,7 +596,7 @@ server {
         error_log /var/log/nginx/paymeinsats-error.log; # Same as above
 
         location / {
-                proxy_pass http://127.0.0.1:8000; # This is your uvicorn LNbits local host IP and port
+                proxy_pass http://127.0.0.1:5000; # This is your uvicorn LNbits local host IP and port
                 proxy_set_header Upgrade $http_upgrade;
                 proxy_set_header Connection 'upgrade';
                 proxy_set_header X-Forwarded-Proto https;
