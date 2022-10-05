@@ -155,15 +155,30 @@ Your OpenVPN Server is now running, which means the Internet can now connect to 
 ### VPS: Install LNBits
 Next we will install [LNBits](https://lnbits.com/) on this server, since it'll allow to keep your node independent and light-weight. It also allows to change nodes swiftly in-case you need to move things. We won't install it via Docker (like Umbrel does), but do the implementation based slightly on their [Github Installation Guide](https://github.com/lnbits/lnbits-legend/blob/main/docs/devs/installation.md). You can also follow their [own, excellent video walkthrough](https://youtu.be/WJRxJtYZAn4?t=49) here. Just don't use Ben's commands, since these are a little dated.
 Since we assume you have followed the hardening guide above to add additional users, we will now have to use `sudo` in our commands.
+
 ```
-$ sudo apt-get install git
-$ git clone https://github.com/lnbits/lnbits-legend
 $ sudo apt update
-# ensure you have virtualenv installed, on debian/ubuntu 'apt install python3-venv' should work
-$ python3 -m venv venv
-$ ./venv/bin/pip install -r requirements.txt
-$ ./venv/bin/uvicorn lnbits.__main__:app --port 5000
+$ sudo apt-get install git -y
+$ git clone https://github.com/lnbits/lnbits-legend
+$ cd lnbits-legend/ 
+
+# for making sure python 3.9 is installed, check with python3 --version, skip this block if installed 3.9 or newer
+$ sudo apt update
+$ sudo apt install software-properties-common
+$ sudo add-apt-repository ppa:deadsnakes/ppa
+$ sudo apt install python3.9 python3.9-distutils
+
+$ curl -sSL https://install.python-poetry.org | python3 -
+$ export PATH="/home/ubuntu/.local/bin:$PATH" # or whatever is suggested in the poetry install notes printed to terminal. this is important!
+$ poetry env use python3.9 # or reference 3.10 if you have a newer version installed
+$ poetry install --only main
+$ poetry run python build.py
+
+$ mkdir data && cp .env.example .env
+$ poetry run lnbits --port 5000
 ```
+	
+If you run into trouble, check out the [original troubleshooting hints](https://github.com/lnbits/lnbits-legend/blob/main/docs/guide/installation.md#troubleshooting). 
 Now when this is successfully starting, you can abort with CTRL-C. We will come back to this for further configuration editing LNBits' config-file to our desired setup.
 
 
@@ -520,19 +535,42 @@ Worth noting, that the directory `data` will hold all your database SQLite3 file
  
  
 ### VPS: Start LNBits and test the LND Node wallet connection
- As soon you got here, we got the most complex things done 💪. The next few steps will be a walk in the park. Get another beverage, and then start LNBits again in your tmux-environment
+
+### VPS: Start LNBits and test the LND Node wallet connection
+As soon you got here, we got the most complex things done 💪. The next few steps will be a walk in the park. Get another beverage, and then we will add LNBits to your [systemd service](https://github.com/lnbits/lnbits-legend/blob/main/docs/guide/installation.md#lnbits-as-a-systemd-service) to automatically start / restart it after reboots.
+Create a new config file with `sudo nano /etc/systemd/system/lnbits.service` and add the following content. Please adjust the lnbits working directory accordingly
 ```
-$ tmux new -s lnbits
-$ cd ~/lnbits-legend
-$ ./venv/bin/uvicorn lnbits.__main__:app --port 5000
+# Systemd unit for lnbits
+# /etc/systemd/system/lnbits.service
+
+[Unit]
+Description=LNbits
+
+[Service]
+# replace with the absolute path of your lnbits installation
+WorkingDirectory=/home/lnbits/lnbits-legend
+ExecStart=/home/lnbits/.local/bin/poetry run lnbits --port 5000
+User=lnbits
+Restart=always
+TimeoutSec=120
+RestartSec=30
+Environment=PYTHONUNBUFFERED=1
+
+[Install]
+WantedBy=multi-user.target
 ```
+Save and then enable it
+```
+sudo systemctl enable lnbits.service
+sudo systemctl start lnbits.service
+```
+
 When this is successful, it'll report your wallet balance of your node, and you can move on. If not, a good debugging approach is to connect from the VPS to your node via `curl https://172.17.0.1:8080 -v --cacert /root/tls.cert`. 
 
-CTRL-C to cancel if successful, and follow the guide here to add lnbits-startup to systemd. This will allow an automated restart [LNBits further documentation](https://github.com/lnbits/lnbits-legend/blob/main/docs/guide/installation.md#additional-guides), but with our slightly adjusted default settings, LNBits should now be running and listening on all incoming requests on port 5000. If you're impatient, add a temporary[^1] ufw exception to test it: `sudo ufw allow 5000/tcp comment 'temporary lnbits check'` and open the corresponding `VPS Public IP: 207.154.241.101:5000`. 
 
-If you see your own LNBits instance, with all your _Optional Adjustments_ added, we'll go to the last, final endboss. 
+LNBits should now be running and listening on all incoming requests on port 5000. If you're impatient, you can `curl https://127.0.0.1:5000` and you should see a text-version of the LNBits UI. Note that because the way we run LNBits only locally, you can't test external access just yet. If `curl` doesn't provide meaningful response, check with the command `netstat -tulpen | grep 5000` to see if your process listening on port 5000.
 
-[^1]: To remove the ufw setting - we don't want to expose any unnecessary ports - call `sudo ufw status numbered`, followed by `sudo ufw delete #number` of the two port 5000 entries.
+If it looks all good, we'll go to the last, final endboss. 
 
 
 ### Your domain, Webserver and SSL setup
