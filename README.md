@@ -263,7 +263,6 @@ Your VPS needs operational maintenance, and a reboot sometimes isn't avoidable. 
 $ iptables -A PREROUTING -t nat -i eth0 -p tcp -m tcp --dport 9735 -j DNAT --to 192.168.255.6:9735
 $ iptables -A PREROUTING -t nat -i eth0 -p tcp -m tcp --dport 8080 -j DNAT --to 192.168.255.6:8080
 $ iptables -t nat -A POSTROUTING -d 192.168.255.0/24 -o tun0 -j MASQUERADE
-$ exit
 ```
 save with `:wq` and now your VPS adheres to those rules after a reboot, too.
 
