@@ -285,7 +285,7 @@ _Adjust ports and IPs accordingly!_
    | --- | --- |
    | `externalip=207.154.241.101:9735`           | # to add your VPS Public-IP |
    | `nat=false`                                 | # deactivate NAT |
-   | `tlsextraip=172.17.0.2`                     | # allow later LNbits-access to your rest-wallet API |
+   | `tlsextraip=172.17.0.1` `tlsextraip=172.17.0.2`                     | # allow later LNbits-access to your rest-wallet API |
 
 [**tor**]
    | Command | Description |
@@ -322,7 +322,7 @@ LND Systemd Startup adjustment
    | --- | --- |
    | `externalip=207.154.241.101:9735`           | # to add your VPS Public-IP |
    | `nat=false`                                 | # deactivate NAT |
-   | `tlsextraip=172.17.0.2`                     | # allow later LNbits-access to your rest-wallet API |
+   | `tlsextraip=172.17.0.1` `tlsextraip=172.17.0.2`                     | # allow later LNbits-access to your rest-wallet API |
 
 [**tor**]
    | Command | Description |
@@ -369,7 +369,7 @@ LND Systemd Startup adjustment
    | --- | --- |
    | `externalip=207.154.241.101:9735`           | # to add your VPS Public-IP |
    | `nat=false`                                 | # deactivate NAT |
-   | `tlsextraip=172.17.0.2`                     | # allow later LNbits-access to your rest-wallet API |
+   | `tlsextraip=172.17.0.1` `tlsextraip=172.17.0.2`                     | # allow later LNbits-access to your rest-wallet API |
 
 [**tor**]
    | Command | Description |
@@ -422,7 +422,7 @@ LND Systemd Startup adjustment
    | --- | --- |
    | `externalip=207.154.241.101:9735` | # to add your VPS Public-IP | 
    | `nat=false`                       | # deactivate NAT | 
-   | `tlsextraip=172.17.0.2`           | # allow later LNbits-access to your rest-wallet API | 
+   | `tlsextraip=172.17.0.1` `tlsextraip=172.17.0.2`           | # allow later LNbits-access to your rest-wallet API | 
 
 [**tor**]
    | Command | Description |
@@ -460,7 +460,7 @@ LND Restart to incorporate changes to `lnd.conf`
    | --- | --- |
    | `externalip=207.154.241.101:9735` | # to add your VPS Public-IP | 
    | `nat=false`                       | # deactivate NAT | 
-   | `tlsextraip=172.17.0.2`           | # allow later LNbits-access to your rest-wallet API | 
+   | `tlsextraip=172.17.0.1` `tlsextraip=172.17.0.2`           | # allow later LNbits-access to your rest-wallet API | 
 
 [**tor**]
    | Command | Description |
@@ -500,8 +500,9 @@ For that, let's climb another tricky obstacle; to respect the excellent security
 1) your tls.cert. Only with access to this file, your VPS is going to be allowed to leverage your LND Wallet via Rest-API
 `scp ~/.lnd/tls.cert root@207.154.241.101:/root/` sends your LND Node tls.cert to your VPS, where we will use it in the next section.
 
-2) your admin.macaroon. Only with that, your VPS can send and receive payments
-`xxd -ps -u -c ~/.lnd/data/chain/bitcoin/mainnet/admin.macaroon` will provide you with a long, hex-encoded string. Keep that terminal window open, since we need to copy that code and use it in our next step on the VPS.
+2) your admin.macaroon. Only with that, your VPS can send and receive payments. See two options below. I've got several reports from umbrel users, that **option A** below doesn't work. If you encounter connection problems between LNBits and LND, try **option B** further below:
+  a) copying over the macaroon as hex-string: `xxd -ps -u -c ~/.lnd/data/chain/bitcoin/mainnet/admin.macaroon` will provide you with a long, hex-encoded string. Keep that terminal window open, since we need to copy that code and use it in our next step on the VPS.
+  b) copying over your admin macaroon as file: `scp ~/.lnd/data/chain/bitcoin/mainnet/admin.macaroon root@207.154.241.101:/root/`. Ensure to only allow your user to access it: `chmod 600 /root/admin.macaroon`
 
 
 ### VPS: Customize and configure LNBits to connect to your LNDRestWallet
@@ -522,7 +523,7 @@ Worth noting, that the directory `data` will hold all your database SQLite3 file
  | `LNBITS_BACKEND_WALLET_CLASS=LndRestWallet` | Specify that we want to use our LND Node Wallet Rest-API
  | `LND_REST_ENDPOINT="https://172.17.0.1:8080"` | Add your `VPS Docker IP: 172.17.0.1` on port 8080 | 
  | `LND_REST_CERT="/root/tls.cert"` | Add the link to the tls.cert file copied over earlier | 
- | `LND_REST_MACAROON="HEXSTRING"` | Copy the hex-encoded snippet from your LND Node Terminal output from Section 11.2 in here | 
+ | Option A: `LND_REST_MACAROON="HEXSTRING"` or Option B: `LND_REST_MACAROON="/root/admin.macaroon"` | Copy the hex-encoded snippet from your LND Node Terminal output from Section 11.2 in here, or the absolute path to the file. Note, that the user running lnbits should have access to the file | 
  
  #### Optional adjustments
  | Variable | Description |
