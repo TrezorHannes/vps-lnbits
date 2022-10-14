@@ -501,7 +501,7 @@ For that, let's climb another tricky obstacle; to respect the excellent security
 `scp ~/.lnd/tls.cert root@207.154.241.101:/root/` sends your LND Node tls.cert to your VPS, where we will use it in the next section.
 
 2) your admin.macaroon. Only with that, your VPS can send and receive payments. See two options below. I've got several reports from umbrel users, that **option A** below doesn't work. If you encounter connection problems between LNBits and LND, try **option B** further below:
-  a) copying over the macaroon as hex-string: `xxd -ps -u -c ~/.lnd/data/chain/bitcoin/mainnet/admin.macaroon` will provide you with a long, hex-encoded string. Keep that terminal window open, since we need to copy that code and use it in our next step on the VPS.
+  a) copying over the macaroon as hex-string: `xxd -ps -u -c 600 ~/.lnd/data/chain/bitcoin/mainnet/admin.macaroon` (Raspiblitz) or `xxd -ps -u -c 600 ~/umbrel/app-data/lightning/data/lnd/data/chain/bitcoin/mainnet/admin.macaroon` (Umbrel 0.5x) will provide you with a long, hex-encoded string. Keep that terminal window open, since we need to copy that code and use it in our next step on the VPS.
   b) copying over your admin macaroon as file: `scp ~/.lnd/data/chain/bitcoin/mainnet/admin.macaroon root@207.154.241.101:/root/`. Ensure to only allow your user to access it: `chmod 600 /root/admin.macaroon`
 
 
