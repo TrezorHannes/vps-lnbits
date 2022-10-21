@@ -210,6 +210,7 @@ $ sudo apt-get install openvpn
 $ sudo cp -p /home/admin/VPNcert/bringmesomesats.ovpn /etc/openvpn/CERT.conf
 $ sudo systemctl enable openvpn@CERT
 $ sudo systemctl start openvpn@CERT
+$ sudo systemctl status openvpn@CERT
 ```
 You should see something similiar to the following output. Note this one line indicating the next important IP Adress `VPN Client IP: 192.168.255.6`. Make a note of it, we need it for port-configuration at the server, soon.
 ```
