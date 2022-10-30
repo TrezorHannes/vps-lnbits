@@ -534,9 +534,6 @@ Worth noting, that the directory `data` will hold all your database SQLite3 file
  | `LNBITS_SITE_DESCRIPTION="Offering free and easy Lightning Bitcoin Payment options for Friends & Family"` | Outline your offering |
  | `LNBITS_THEME_OPTIONS="classic, bitcoin, flamingo, mint, autumn, monochrome, salvador"` | Provide different color themes, or keep it simple |
  `CTRL-X` => `Yes` => `Enter` to save
- 
- 
-### VPS: Start LNBits and test the LND Node wallet connection
 
 ### VPS: Start LNBits and test the LND Node wallet connection
 As soon you got here, we got the most complex things done 💪. The next few steps will be a walk in the park. Get another beverage, and then we will add LNBits to your [systemd service](https://github.com/lnbits/lnbits-legend/blob/main/docs/guide/installation.md#lnbits-as-a-systemd-service) to automatically start / restart it after reboots.
