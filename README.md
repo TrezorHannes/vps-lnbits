@@ -1,9 +1,12 @@
 
+
 # VPS-LNbits
 _Documentation to setup LNbits on a VPS, connected to your Lightning Network Node through a secured tunnel_
 <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/0/0b/Brenner_Base_Tunnel_Aicha-Mauls.jpg/640px-Brenner_Base_Tunnel_Aicha-Mauls.jpg" alt="Brennerbasistunnel – Wikipedia"/>
 
-Here's my current setup shared with you, and your intend can be manyfold, you may
+This is the first of two guides I've put together to get LNBits running on a VPS, connected to your node. This one below is using OpenVPN, the alternative [is linked here](https://github.com/TrezorHannes/vps-lnbits-wg) to achieve the similar, but with Wireguard. Have a read through both and see what your preference is. Personally, I have Wireguard running, since it's less overhead and further additions to the Port-Forwarding rules is easier.
+
+Objective you came here, can be manyfold. You may
 - have a dynamic IP from your Internet Service Provider
 - want to hide your home IP from the world, for whatever reason
 - desire to decrease your Lightning Node HTLC Routing times, so instead of running Tor only, you want Clearnet availability, too
@@ -64,6 +67,7 @@ This guide heavily relies on the intelligence and documentation of others 🙏, 
 - [TURN YOUR SELF HOSTED LIGHTNING NETWORK NODE TO PUBLIC IN 10 MINUTES](https://www.mobycrypt.com/turn-your-self-hosted-lightning-network-node-to-public-in-10-minutes/)
 - [OpenVPN for Docker](https://github.com/kylemanna/docker-openvpn)
 - [How to configure Umbrel LNbits app without Tor](https://community.getumbrel.com/t/how-to-configure-umbrel-lnbits-app-without-tor/604)
+- [VPS LNBits with Wireguard](https://github.com/TrezorHannes/vps-lnbits-wg)
 
 
 ## Pre-Requisites
@@ -133,28 +137,27 @@ $ ufw allow 443 comment 'SSL Webserver'
 $ ufw allow 9735 comment 'LND Main Node 1'
 $ ufw enable
 ```
-   - [ ] Follow [further hardening steps](https://www.digitalocean.com/community/tutorials/initial-server-setup-with-ubuntu-18-04), eg setting up non-root users for additional security enhancements.
+   - [ ] Follow [further hardening steps](https://www.digitalocean.com/community/tutorials/initial-server-setup-with-ubuntu-18-04), especially step 2) and 3) in the link, to set up non-root users for additional security enhancements. We consider in this guide you have added a user "admin" with sudo rights from this step forward.
    - [ ] Install fail2ban to protect your SSH user, it runs automatically on it's own `sudo apt install fail2ban`
 
 ### VPS: Install OpenVPN Server
 Now we will get OpenVPN installed, but using a Docker Setup like [Krypto4narchista](https://twitter.com/_pthomann) suggests [here](https://www.mobycrypt.com/turn-your-self-hosted-lightning-network-node-to-public-in-10-minutes/). It's easier to setup, but needs some tinkering with port forwarding, which we will go into in a bit.
    - [ ] `export OVPN_DATA="ovpn-data"` which sets a global-name placeholder for your VPN to be used for all the following commands. You can make this permanent by adding this to survive any reboot via `nano .bashrc`, add it to the very bottom => CTRL-X => Yes. 
-   - [ ] `docker volume create --name $OVPN_DATA` notice how the $ indicates picking up the placeholder you have defined above
-   - [ ] `docker run -v $OVPN_DATA:/etc/openvpn --rm kylemanna/openvpn ovpn_genconfig -u udp://207.154.241.101`, whereby you need to adjust the 207.154.241.101 with your own **VPS Public IP**.
-   - [ ] `docker run -v $OVPN_DATA:/etc/openvpn --rm -it kylemanna/openvpn ovpn_initpki` this generates the necessary VPN certificate password. Take your password manager and create a secure pwd, which you will store safely. It will be needed once we create client-configuration files for your node to connect later.
-   - [ ] `docker run -v $OVPN_DATA:/etc/openvpn -d -p 1194:1194/udp -p 9735:9735 -p 8080:8080 --cap-add=NET_ADMIN kylemanna/openvpn` this works under two assumptions. If any of those aren't true, you need to adjust your settings, either on your node, or by starting the docker container with different ports: 
+   - [ ] `sudo docker volume create --name $OVPN_DATA` notice how the $ indicates picking up the placeholder you have defined above
+   - [ ] `sudo docker run -v $OVPN_DATA:/etc/openvpn --rm kylemanna/openvpn ovpn_genconfig -u udp://207.154.241.101`, whereby you need to adjust the 207.154.241.101 with your own **VPS Public IP**.
+   - [ ] `sudo docker run -v $OVPN_DATA:/etc/openvpn --rm -it kylemanna/openvpn ovpn_initpki` this generates the necessary VPN certificate password. Take your password manager and create a secure pwd, which you will store safely. It will be needed once we create client-configuration files for your node to connect later.
+   - [ ] `sudo docker run -v $OVPN_DATA:/etc/openvpn -d -p 1194:1194/udp -p 9735:9735 -p 8080:8080 --cap-add=NET_ADMIN kylemanna/openvpn` this works under two assumptions. If any of those aren't true, you need to adjust your settings, either on your node, or by starting the docker container with different ports: 
      1) your current LND Node configuration is listening on port 9735, which you can verify by looking into your `cat ~/.lnd/lnd.conf` => `[Application Options]` => `listen=0.0.0.0:9735`
      2) your LND RestLNDWallet is listening on port 8080, same location under `[Application Options]` => `restlisten=0.0.0.0:8080`
 
 Your OpenVPN Server is now running, which means the Internet can now connect to your VPS via ports 80, 443, 9735 (and 22 SSH), and it has a closed tunnel established on port 1194. You need to complement your notes with the IP-Adresses which are essentially added with the running server.
 
-   - [ ] CONTAINER-ID: `docker ps` to list your docker container. In the first column, you will find the `CONTAINER-ID`, usually a cryptic 12-digit number/character combination. Copy into the clipboard and make a note of it. 
-   - [ ] Docker Shell: Get into the container, with `docker exec -it <CONTAINER-ID> sh`. 
+   - [ ] CONTAINER-ID: `sudo docker ps` to list your docker container. In the first column, you will find the `CONTAINER-ID`, usually a cryptic 12-digit number/character combination. Copy into the clipboard and make a note of it. 
+   - [ ] Docker Shell: Get into the container, with `sudo docker exec -it <CONTAINER-ID> sh`. 
    - [ ] VPS Docker IP: Run `ifconfig` and you typically find 3 devices listed with IPs assigned. Make a note of the one with eth0, which is your own `VPS Docker IP: 172.17.0.2`. Type `exit` to get out of the docker-shell.
 
 ### VPS: Install LNBits
 Next we will install [LNBits](https://lnbits.com/) on this server, since it'll allow to keep your node independent and light-weight. It also allows to change nodes swiftly in-case you need to move things. We won't install it via Docker (like Umbrel does), but do the implementation based slightly on their [Github Installation Guide](https://github.com/lnbits/lnbits-legend/blob/main/docs/devs/installation.md). You can also follow their [own, excellent video walkthrough](https://youtu.be/WJRxJtYZAn4?t=49) here. Just don't use Ben's commands, since these are a little dated.
-Since we assume you have followed the hardening guide above to add additional users, we will now have to use `sudo` in our commands.
 
 ```
 $ sudo apt update
@@ -169,7 +172,7 @@ $ sudo add-apt-repository ppa:deadsnakes/ppa
 $ sudo apt install python3.9 python3.9-distutils
 
 $ curl -sSL https://install.python-poetry.org | python3 -
-$ export PATH="/home/ubuntu/.local/bin:$PATH" # or whatever is suggested in the poetry install notes printed to terminal. this is important!
+$ export PATH="/home/admin/.local/bin:$PATH" # or whatever is suggested in the poetry install notes printed to terminal. this is important!
 $ poetry env use python3.9 # or reference 3.10 if you have a newer version installed
 $ poetry install --only main
 $ poetry run python build.py
@@ -184,8 +187,8 @@ Now when this is successfully starting, you can abort with CTRL-C. We will come 
 
 ### VPS: Retrieve the OpenVPN config & certificate
 In this section we'll switch our work from setting up the server towards getting your LND node ready to connect to the tunnel. For this, we will retrieve and transfer the configuration file from your VPS to your node.
-   - [ ] `docker run -v $OVPN_DATA:/etc/openvpn --rm -it kylemanna/openvpn easyrsa build-client-full NODE-NAME nopass` whereby `NODE-NAME` should be changed to a unique identifier you chose. For example, if your LND Node is called "BringMeSomeSats", I suggest to use that - with all lowercase.
-   - [ ] `docker run -v $OVPN_DATA:/etc/openvpn --rm kylemanna/openvpn ovpn_getclient NODE-NAME > NODE-NAME.ovpn` which will prompt you to provide the secure password you have generated earlier. Afterwards, it'll store `bringmesomesats.ovpn` in the directory you currently are.
+   - [ ] `sudo docker run -v $OVPN_DATA:/etc/openvpn --rm -it kylemanna/openvpn easyrsa build-client-full NODE-NAME nopass` whereby `NODE-NAME` should be changed to a unique identifier you chose. For example, if your LND Node is called "BringMeSomeSats", I suggest to use that - with all lowercase.
+   - [ ] `sudo docker run -v $OVPN_DATA:/etc/openvpn --rm kylemanna/openvpn ovpn_getclient NODE-NAME > NODE-NAME.ovpn` which will prompt you to provide the secure password you have generated earlier. Afterwards, it'll store `bringmesomesats.ovpn` in the directory you currently are.
 
 
 ## Into the Tunnel
@@ -196,18 +199,18 @@ Now switch to another terminal window, and SSH into your **Lightning Node**. We 
 ```
 $ cd ~
 $ mkdir VPNcert
-$ scp user@207.154.241.101:/home/user/bringmesomesats.ovpn /home/admin/VPNcert/
-$ chmod 600 /home/admin/VPNcert/bringmesomesats.ovpn
+$ scp admin@207.154.241.101:/home/admin/bringmesomesats.ovpn /home/admin/VPNcert/
+$ chmod 600 /home/user/VPNcert/bringmesomesats.ovpn
 ```
-_Note: You need to adjust `user`, the **VPS Public IP** and the absolute directory where the ovpn file is stored. We keep a copy of the cert file in the home directory for backup, but the actual file we use is `CERT.conf`._
+_Note: You need to adjust `user`, the **VPS Public IP** and the absolute directory where the ovpn file is stored.
 
 Now we need to install OpenVPN, start it up to see if it works.
 
 **Important Warning**: Depending on your network-setup, there is a slight chance your LND Node Service gets interrupted. Be aware there might be small down-times of your lightning node, as we will reconfigure things. Be patient!
 
 ```
-$ sudo apt-get install openvpn
-$ sudo cp -p /home/admin/VPNcert/bringmesomesats.ovpn /etc/openvpn/CERT.conf
+$ sudo apt install openvpn
+$ sudo cp -p /home/user/VPNcert/bringmesomesats.ovpn /etc/openvpn/CERT.conf
 $ sudo systemctl enable openvpn@CERT
 $ sudo systemctl start openvpn@CERT
 $ sudo systemctl status openvpn@CERT
@@ -243,7 +246,7 @@ The tunnel between your LND Node and your VPS VPN is established. If you need to
 ### VPS: Add routing tables configuration into your droplet docker
 Back to your terminal window connected to your VPS. We have the `VPN Client IP: 192.168.255.6` now, which we need to tell our VPS where it should route those packets to. To achieve that, we'll get back into the docker container and add IPTables rules.
 
-   - [ ] [Remember](#4-vps-install-openvpn-server) how to get into the container? Arrow-up on your keyboard, or do `docker ps` and `docker exec -it <CONTAINER-ID> sh`
+   - [ ] [Remember](#4-vps-install-openvpn-server) how to get into the container? Arrow-up on your keyboard, or do `sudo docker ps` and `sudo docker exec -it <CONTAINER-ID> sh`
    - [ ] Doublecheck your VPN Client IP, and adjust it in the following IPtables commands you enter into the container and confirm with Enter
 
 ```
@@ -257,7 +260,7 @@ What we basically do here, is assign a ruleset to say: As soon a packet arrives 
 #### Permanent saving of IPtable rules
 Your VPS needs operational maintenance, and a reboot sometimes isn't avoidable. If you want to make the above iptable entries permanent, follow these steps:
 
-   - [Follow this step again](#4-vps-install-openvpn-server) to get into the container,  arrow-up on your keyboard, or do `docker ps` and `docker exec -it <CONTAINER-ID> sh`
+   - [Follow this step again](#4-vps-install-openvpn-server) to get into the container,  arrow-up on your keyboard, or do `sudo docker ps` and `sudo docker exec -it <CONTAINER-ID> sh`
    - within the container, change the directory `cd /etc/openvpn` and open the environment-settings file for OpenVPN via `vi ovpn_env.sh`. Nano isn't installed in the docker container,  follow the [vi-cheatsheet PDF](https://www.atmos.albany.edu/daes/atmclasses/atm350/vi_cheat_sheet.pdf) if you get confused (and you will). Add the following lines to the file
 
 ```
@@ -499,11 +502,11 @@ For that, let's climb another tricky obstacle; to respect the excellent security
 **Note of warning again**: Both of those files are highly sensitive. Don't show them to anyone, don't transfer them via Email, just follow the secure channel below and you should be fine, as long you keep the security barriers installed in [Section "Secure"](#secure) intact.
 
 1) your tls.cert. Only with access to this file, your VPS is going to be allowed to leverage your LND Wallet via Rest-API
-`scp ~/.lnd/tls.cert root@207.154.241.101:/root/` sends your LND Node tls.cert to your VPS, where we will use it in the next section.
+`scp ~/.lnd/tls.cert admin@207.154.241.101:/home/admin/` sends your LND Node tls.cert to your VPS, where we will use it in the next section.
 
 2) your admin.macaroon. Only with that, your VPS can send and receive payments. See two options below. I've got several reports from umbrel users, that **option A** below doesn't work. If you encounter connection problems between LNBits and LND, try **option B** further below:
   a) copying over the macaroon as hex-string: `xxd -ps -u -c 600 ~/.lnd/data/chain/bitcoin/mainnet/admin.macaroon` (Raspiblitz) or `xxd -ps -u -c 600 ~/umbrel/app-data/lightning/data/lnd/data/chain/bitcoin/mainnet/admin.macaroon` (Umbrel 0.5x) will provide you with a long, hex-encoded string. Keep that terminal window open, since we need to copy that code and use it in our next step on the VPS.
-  b) copying over your admin macaroon as file: `scp ~/.lnd/data/chain/bitcoin/mainnet/admin.macaroon root@207.154.241.101:/root/`. Ensure to only allow your user to access it: `chmod 600 /root/admin.macaroon`
+  b) copying over your admin macaroon as file: `scp ~/.lnd/data/chain/bitcoin/mainnet/admin.macaroon admin@207.154.241.101:/home/admin/`. Ensure to only allow your user to access it: `chmod 600 /home/admin/admin.macaroon`
 
 
 ### VPS: Customize and configure LNBits to connect to your LNDRestWallet
@@ -520,11 +523,11 @@ Worth noting, that the directory `data` will hold all your database SQLite3 file
 #### Necessary adjustments
  | Variable | Description |
  | --- | --- |
- | `LNBITS_DATA_FOLDER="/user/lnbits-legend/data"` | enter the absolute path to the data folder you created above | 
+ | `LNBITS_DATA_FOLDER="/home/admin/lnbits-legend/data"` | enter the absolute path to the data folder you created above | 
  | `LNBITS_BACKEND_WALLET_CLASS=LndRestWallet` | Specify that we want to use our LND Node Wallet Rest-API
  | `LND_REST_ENDPOINT="https://172.17.0.1:8080"` | Add your `VPS Docker IP: 172.17.0.1` on port 8080 | 
- | `LND_REST_CERT="/root/tls.cert"` | Add the link to the tls.cert file copied over earlier | 
- | Option A: `LND_REST_MACAROON="HEXSTRING"` or Option B: `LND_REST_MACAROON="/root/admin.macaroon"` | Copy the hex-encoded snippet from your LND Node Terminal output from Section 11.2 in here, or the absolute path to the file. Note, that the user running lnbits should have access to the file | 
+ | `LND_REST_CERT="/home/admin/tls.cert"` | Add the link to the tls.cert file copied over earlier | 
+ | Option A: `LND_REST_MACAROON="HEXSTRING"` or Option B: `LND_REST_MACAROON="/home/admin/admin.macaroon"` | Copy the hex-encoded snippet from your LND Node Terminal output from Section 11.2 in here, or the absolute path to the file. Note, that the user running lnbits should have access to the file | 
  
  #### Optional adjustments
  | Variable | Description |
@@ -547,9 +550,9 @@ Description=LNbits
 
 [Service]
 # replace with the absolute path of your lnbits installation
-WorkingDirectory=/home/lnbits/lnbits-legend
-ExecStart=/home/lnbits/.local/bin/poetry run lnbits --port 5000
-User=lnbits
+WorkingDirectory=/home/admin/lnbits-legend
+ExecStart=/home/admin/.local/bin/poetry run lnbits --port 5000
+User=admin
 Restart=always
 TimeoutSec=120
 RestartSec=30
@@ -564,7 +567,7 @@ sudo systemctl enable lnbits.service
 sudo systemctl start lnbits.service
 ```
 
-When this is successful, it'll report your wallet balance of your node, and you can move on. If not, a good debugging approach is to connect from the VPS to your node via `curl https://172.17.0.1:8080 -v --cacert /root/tls.cert`. 
+When this is successful, it'll report your wallet balance of your node, and you can move on. If not, a good debugging approach is to connect from the VPS to your node via `curl https://172.17.0.1:8080 -v --cacert /home/admin/tls.cert`. 
 
 
 LNBits should now be running and listening on all incoming requests on port 5000. If you're impatient, you can `curl https://127.0.0.1:5000` and you should see a text-version of the LNBits UI. Note that because the way we run LNBits only locally, you can't test external access just yet. If `curl` doesn't provide meaningful response, check with the command `netstat -tulpen | grep 5000` to see if your process listening on port 5000.
