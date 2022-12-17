@@ -575,7 +575,7 @@ LNBits should now be running and listening on all incoming requests on port 5000
 If it looks all good, we'll go to the last, final endboss. 
 
 
-### Your domain, Webserver and SSL setup
+### Your domain, Webserver and SSL setup (new version with caddy web server)
 We don't want to share our IP-Adress for others to pay us, a domain name is a much better brand. And we want to keep it secure, so we need to get us an SSL certificate. Good for you, both options are available for free, just needs some further work.
 
 #### Domain
@@ -587,76 +587,56 @@ While there are plenty of domain-name providers out there, we are going to use a
 
 Keep the site open, we'll need it soon
 
-#### VPS: SSL certificate
-You want your secure https:// site to confirm to your visitor's browser that you're legit. For this, we will use Certbot to manage our SSL certificate management, even though LNBits recommends [caddy](https://caddyserver.com/docs/install#debian-ubuntu-raspbian). Use your own preference, we'll walk through certbot here:
+#### VPS: Caddy web server
+
+Caddy is an open source web server with automatic HTTPS certification and brings the web interface of your LNbits instance to the clearnet. It really takes care of everything very efficiently. You only have to point the DNS entry of the (sub)domain to the IP address of the VPS, and Caddy takes care of the rest.
+
+If you still prefer the previous version with nginx and certbot, you can find the documentation [here](old-web-server.md).
+
+
+##### First: Check DNS entry
+
+Check beforehand whether the DNS entry also works and forwards the web domain directly to your VPS IP address. With [DNS Lookup](https://mxtoolbox.com/DNSLookup.aspx) or [whatsmydns.net](https://www.whatsmydns.net/).
+
+##### Install Caddy
 ```
-$ sudo apt update
-$ sudo apt install nginx certbot
-$ sudo certbot certonly --manual --preferred-challenges dns
+sudo apt install -y debian-keyring debian-archive-keyring apt-transport-https
+curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/gpg.key' | sudo gpg --dearmor -o /usr/share/keyrings/caddy-stable-archive-keyring.gpg
+curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/debian.deb.txt' | sudo tee /etc/apt/sources.list.d/caddy-stable.list
+sudo apt update
+sudo apt install caddy
 ```
-Next to a few other things, Certbot will ask you for your domain, so add your `paymeinsats.duckdns.org`. Then it'll prompt you to place a TXT record for \_acme-challenge.paymeinsats.duckdns.org, which is basically their way to verify whether you really own this domain. 
-To achieve this, leave the certbot alone without touching anything, and follow those steps in parallel:
-   - [ ] Open a text editor, and add this URL: `https://www.duckdns.org/update?domains={YOURVALUE}&token={YOURVALUE}&txt={YOURVALUE}[&verbose=true]`
-   - [ ] replace each variable[^2]
-     - `domains={YOURVALUE}` with your subdomain only, in our case `domains=paymeinsats`
-     - `token={YOURVALUE}` with your token from your duckdns.org overview
-     - `txt={YOURVALUE}` with the random text-snippet certbot provided you to fill in
-     - optional: set `verbose=true` if you want 2 lines more info as a response
-   - [ ] Copy that whole string into a new Webbrowser window, and if verbose isn't set as true, it'll be as crisp as `OK`
-   - [ ] In a new Terminal window, install dig `sudo apt-get install dnsutils` to check if the world knows about you solved the challenge: `dig -t txt _acme-challenge.paymeinsats.duckdns.org`. Compare the TXT record entry with what Certbot provided you. If both are similar, confirm with `Enter` in the Certbot Terminal, so it can do it's own verification
-   - [ ] Once successful, you got your SSL certificates. Make a note in your calendar when the validation time is over, so you renew early enough. Also take note of the absolute paths of those two certificates you received.
 
-[^2]: [Visit Specpage of duckdns.org for further details here](https://www.duckdns.org/spec.jsp)
-
-
-#### VPS: Webserver NGINX
-Uvicorn is working fine, but we'll add a more robust solution, to be able to do some caching and better log-management: nginx (engine-x). We'll add a new configuration file for your website.
-
-_Please don't forget to adjust domain names and paths below accordingly_
-
-   - [ ] `sudo nano /etc/nginx/sites-available/paymeinsats.conf` to create and edit your new configuration file nginx will use
-
-Add the following entries
+##### Create the Caddyfile
 ```
-server {
-        # Binds the TCP port 80
-        listen 80;
-        # Defines the domain or subdomain name
-        server_name paymeinsats.duckdns.org;
-        # Redirect the traffic to the corresponding 
-        # HTTPS server block with status code 301
-        return 301 https://$host$request_uri;
-       }
+sudo caddy stop
+sudo nano Caddyfile
+```
 
-server {
-        listen 443 ssl; # tell nginx to listen on port 443 for SSL connections
-        server_name paymeinsats.duckdns.org; # tell nginx the expected domain for requests
-
-        access_log /var/log/nginx/paymeinsats-access.log; # Your first go-to for troubleshooting
-        error_log /var/log/nginx/paymeinsats-error.log; # Same as above
-
-        location / {
-                proxy_pass http://127.0.0.1:5000; # This is your uvicorn LNbits local host IP and port
-                proxy_set_header Upgrade $http_upgrade;
-                proxy_set_header Connection 'upgrade';
-                proxy_set_header X-Forwarded-Proto https;
-                proxy_set_header Host $host;
-                proxy_http_version 1.1; # headers to ensure replies are coming back and forth through your domain
-       }
-
-        ssl_certificate /etc/letsencrypt/live/paymeinsats.duckdns.org/fullchain.pem; # Point to the fullchain.pem from Certbot 
-        ssl_certificate_key /etc/letsencrypt/live/paymeinsats.duckdns.org/privkey.pem; # Point to the private key from Certbot
+##### Fill the file with an adjusted domain address
+```
+paymeinsats.duckdns.org {
+  handle /api/v1/payments/sse* {
+    reverse_proxy 0.0.0.0:5000 {
+      header_up X-Forwarded-Host paymeinsats.duckdns.org
+      transport http {
+         keepalive off
+         compression off
+      }
+    }
+  }
+  reverse_proxy 0.0.0.0:5000 {
+    header_up X-Forwarded-Host paymeinsats.duckdns.org
+  }
 }
 ```
-`CTRL-X` => `Yes` => `Enter` to save
-Next we'll test the configuration and enable it by creating a symlink from sites-available to sites-enabled.
+-> CTRL+x -> y -> ENTER
+
+##### Restart Caddy
 ```
-$ sudo nginx -t
-nginx: the configuration file /etc/nginx/nginx.conf syntax is ok
-nginx: configuration file /etc/nginx/nginx.conf test is successful
-$ sudo ln -s /etc/nginx/sites-available/paymeinsats.conf /etc/nginx/sites-enabled/
-$ sudo systemctl restart nginx
+sudo caddy start 
 ```
+
 
 Now the moment of truth: Go to your Website [https://paymeinsats.duckdns.org](https://paymeinsats.duckdns.org) and either celebrate 🍻 
 or troubleshoot where things could have gone wrong. If the former: Congratulations - you made it!
