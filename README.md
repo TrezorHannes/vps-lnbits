@@ -264,7 +264,29 @@ iptables -A PREROUTING -t nat -i eth0 -p tcp -m tcp --dport 9735 -j DNAT --to 19
 iptables -A PREROUTING -t nat -i eth0 -p tcp -m tcp --dport 8080 -j DNAT --to 192.168.255.6:8080
 iptables -t nat -A POSTROUTING -d 192.168.255.0/24 -o tun0 -j MASQUERADE
 ```
-save with `:wq` and now your VPS adheres to those rules after a reboot, too.
+
+#### Here's some help on how to use the editor
+
+For practice, leave the editor now
+
+- ESC -> `:q!` -> ENTER -> Exit without saving
+- That :q! you really have to enter it like this
+
+Now the editor opens again
+
+- `vi ovpn_env.sh`
+- set the cursor to the last line -> G (=> capital "G" -> Shift+g)
+- go to edit mode -> a (lowercase "a")
+- wrap a line -> ENTER
+  - now copy the three "iptables" lines from above
+- ESC -> leave editing mode
+  - `:wq` -> save changes and close
+
+##### Then leave the docker again
+
+```
+$ exit
+```
 
 ### LND Node: LND adjustments to listen and channel via VPS VPN Tunnel
 We switch Terminal windows again, going back to your LND Node. A quick disclaimer again, since we are fortunate enough to have plenty of good LND node solutions out there, we cannot cater for every configuration out there. Feel free to leave comments or log issues if you get stuck for your node, we'll be looking at the two most different setups here. But this should work very similar on _MyNode_, _Raspibolt_ or _Citadel_.
