@@ -600,17 +600,18 @@ Check beforehand whether the DNS entry also works and forwards the web domain di
 
 ##### Install Caddy
 ```
-sudo apt install -y debian-keyring debian-archive-keyring apt-transport-https
-curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/gpg.key' | sudo gpg --dearmor -o /usr/share/keyrings/caddy-stable-archive-keyring.gpg
-curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/debian.deb.txt' | sudo tee /etc/apt/sources.list.d/caddy-stable.list
-sudo apt update
-sudo apt install caddy
+$ cd ~
+$ sudo apt install -y debian-keyring debian-archive-keyring apt-transport-https
+$ curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/gpg.key' | sudo gpg --dearmor -o /usr/share/keyrings/caddy-stable-archive-keyring.gpg
+$ curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/debian.deb.txt' | sudo tee /etc/apt/sources.list.d/caddy-stable.list
+$ sudo apt update
+$ sudo apt install caddy
 ```
 
 ##### Create the Caddyfile
 ```
-sudo caddy stop
-sudo nano Caddyfile
+$ sudo caddy stop
+$ sudo nano /etc/caddy/Caddyfile
 ```
 
 ##### Fill the file with an adjusted domain address
@@ -630,13 +631,47 @@ paymeinsats.duckdns.org {
   }
 }
 ```
--> CTRL+x -> y -> ENTER
+-> CTRL+x -> y -> RETURN
 
-##### Restart Caddy
+##### Add caddy autostart service
 ```
-sudo caddy start 
+$ sudo nano /etc/systemd/system/caddy.service
 ```
+##### Replace content with
+```
+# caddy.service
 
+[Unit]
+Description=Caddy
+Documentation=https://caddyserver.com/docs/
+After=network.target network-online.target
+Requires=network-online.target
+
+[Service]
+Type=notify
+User=caddy
+Group=caddy
+ExecStart=/usr/bin/caddy run --environ --config /etc/caddy/Caddyfile
+ExecReload=/usr/bin/caddy reload --config /etc/caddy/Caddyfile --force
+TimeoutStopSec=5s
+LimitNOFILE=1048576
+LimitNPROC=512
+PrivateDevices=yes
+PrivateTmp=true
+ProtectSystem=full
+AmbientCapabilities=CAP_NET_BIND_SERVICE
+
+[Install]
+WantedBy=multi-user.target
+```
+-> CTRL+x -> y -> RETURN
+
+##### Enable, start and check service
+```
+$ sudo systemctl enable caddy.service
+$ sudo systemctl start caddy.service
+$ sudo systemctl status caddy.service
+```
 
 Now the moment of truth: Go to your Website [https://paymeinsats.duckdns.org](https://paymeinsats.duckdns.org) and either celebrate 🍻 
 or troubleshoot where things could have gone wrong. If the former: Congratulations - you made it!
