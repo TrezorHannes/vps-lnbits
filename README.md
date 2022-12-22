@@ -1,5 +1,3 @@
-
-
 # VPS-LNbits
 _Documentation to setup LNbits on a VPS, connected to your Lightning Network Node through a secured tunnel_
 <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/0/0b/Brenner_Base_Tunnel_Aicha-Mauls.jpg/640px-Brenner_Base_Tunnel_Aicha-Mauls.jpg" alt="Brennerbasistunnel – Wikipedia"/>
@@ -267,9 +265,9 @@ Your VPS needs operational maintenance, and a reboot sometimes isn't avoidable. 
 $ iptables -A PREROUTING -t nat -i eth0 -p tcp -m tcp --dport 9735 -j DNAT --to 192.168.255.6:9735
 $ iptables -A PREROUTING -t nat -i eth0 -p tcp -m tcp --dport 8080 -j DNAT --to 192.168.255.6:8080
 $ iptables -t nat -A POSTROUTING -d 192.168.255.0/24 -o tun0 -j MASQUERADE
-$ exit
 ```
-save with `:wq` and now your VPS adheres to those rules after a reboot, too.
+save with `:wq` and now your VPS adheres to those rules after a reboot, too. `exit` to get out of the container.
+If you want to ensure the docker-container autostarts after a VPS reboot, add the restart option to docker via `sudo docker update --restart unless-stopped <CONTAINER-ID>`
 
 ### LND Node: LND adjustments to listen and channel via VPS VPN Tunnel
 We switch Terminal windows again, going back to your LND Node. A quick disclaimer again, since we are fortunate enough to have plenty of good LND node solutions out there, we cannot cater for every configuration out there. Feel free to leave comments or log issues if you get stuck for your node, we'll be looking at the two most different setups here. But this should work very similar on _MyNode_, _Raspibolt_ or _Citadel_.
@@ -536,6 +534,7 @@ Worth noting, that the directory `data` will hold all your database SQLite3 file
  | `LNBITS_SITE_TAGLINE="free and open-source lightning wallet"` | Define the sub-title in the body |
  | `LNBITS_SITE_DESCRIPTION="Offering free and easy Lightning Bitcoin Payment options for Friends & Family"` | Outline your offering |
  | `LNBITS_THEME_OPTIONS="classic, bitcoin, flamingo, mint, autumn, monochrome, salvador"` | Provide different color themes, or keep it simple |
+ 
  `CTRL-X` => `Yes` => `Enter` to save
 
 ### VPS: Start LNBits and test the LND Node wallet connection
@@ -635,7 +634,7 @@ paymeinsats.duckdns.org {
   }
 }
 ```
--> CTRL+x -> y -> RETURN
+`CTRL-X` => `Yes` => `Enter` to save
 
 ##### Add caddy autostart service
 ```
