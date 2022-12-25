@@ -163,8 +163,7 @@ $ sudo apt-get install git -y
 $ git clone https://github.com/lnbits/lnbits-legend
 $ cd lnbits-legend/ 
 
-# for making sure python 3.9 is installed, check with python3 --version, skip this block if installed 3.9 or newer
-$ sudo apt update
+# to ensure python 3.9 is installed, check with python3 --version, skip this block if installed 3.9 or newer
 $ sudo apt install software-properties-common
 $ sudo add-apt-repository ppa:deadsnakes/ppa
 $ sudo apt install python3.9 python3.9-distutils
@@ -585,10 +584,9 @@ While there are plenty of domain-name providers out there, we are going to use a
    - [ ] make an account on DuckDNS with GH or Email
    - [ ] add 1 of 5 free subdomains, eg. paymeinsats
    - [ ] point this domain to your `VPS Public IP: 207.154.241.101`
-   - [ ] Make a note of your Token
+   - [ ] Make a note of your Token in case you chose nginx as webserver below
 
-Keep the site open, we'll need it if you follow the nginx-config below.
-Now what's new, you can chose either Caddy or Nginx as webserver install. The former is way simpler, but in case you're more familiar with Nginx, go for the latter. But you have to chose one. Expand below and ignore the other.
+In this guide, you can chose either Caddy or Nginx as webserver install. The former is way simpler, but in case you're more familiar with Nginx, go for the latter:
 
 #### 🆕 VPS: Caddy web server
 <details><summary>Click here to expand the web-server setup with Caddy as a web server</summary>
@@ -679,7 +677,7 @@ $ sudo systemctl status caddy.service
 </details>
 
 #### VPS: nginx web server
-<details><summary>Click here to expand if you prefer to use nginx web-server setup, which is a tat more complex but also battle-tested</summary>
+<details><summary>Click here to expand if you prefer to use nginx web-server setup, which is more complex but also battle-tested</summary>
 <p>
 #### VPS: SSL certificate
 
