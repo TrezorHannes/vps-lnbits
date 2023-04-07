@@ -760,7 +760,7 @@ Hope you enjoyed this article. Please do share feedback and suggestions for impr
 If this guide was of any help, I'd appreciate if you share the article with others, give me a follow on Twitter [![Twitter URL](https://img.shields.io/twitter/url/https/twitter.com/HandsdownI.svg?style=social&label=Follow%20%40HandsdownI)](https://twitter.com/HandsdownI)
 or even donating some sats below
 
-[<img src=https://user-images.githubusercontent.com/35168804/156722937-59239884-5398-48ae-a4f2-1d6c53dfd0fb.png width="100" height="100">](https://pwbtc.duckdns.org/lnurlp/2)
+[<img src=https://user-images.githubusercontent.com/35168804/230683611-74de9e6c-2529-4bb1-a610-d1d77df77589.png width="100" height="100">](https://pwbtc.duckdns.org/lnurlp/link/2)
 
 I'm also always grateful for incoming channels to my node: [HODLmeTight](https://amboss.space/node/037f66e84e38fc2787d578599dfe1fcb7b71f9de4fb1e453c5ab85c05f5ce8c2e3)
 
