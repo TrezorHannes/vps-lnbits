@@ -360,7 +360,7 @@ LND Systemd Startup adjustment
 </p>
 </details>
 
-<details><summary>Click here to expand Raspiblitz 1.8.x settings</summary>
+<details><summary>Click here to expand Raspiblitz 1.8-1.10 settings</summary>
 <p>
 
    LND.conf adjustments, open with `sudo nano /mnt/hdd/lnd/lnd.conf`
