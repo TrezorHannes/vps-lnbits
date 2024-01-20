@@ -757,10 +757,7 @@ Now the moment of truth: Go to your Website [https://paymeinsats.duckdns.org](ht
 or troubleshoot where things could have gone wrong. If the former: Congratulations - you made it!
 
 Hope you enjoyed this article. Please do share feedback and suggestions for improvement.
-If this guide was of any help, I'd appreciate if you share the article with others, give me a follow on Twitter [![Twitter URL](https://img.shields.io/twitter/url/https/twitter.com/HandsdownI.svg?style=social&label=Follow%20%40HandsdownI)](https://twitter.com/HandsdownI)
-or even donating some sats below
-
-[<img src=https://user-images.githubusercontent.com/35168804/230683611-74de9e6c-2529-4bb1-a610-d1d77df77589.png width="100" height="100">](https://pwbtc.duckdns.org/lnurlp/link/2)
+If this guide was of any help, I'd appreciate if you share the article with others, give me a follow on X [![Twitter URL](https://img.shields.io/twitter/url/https/twitter.com/HandsdownI.svg?style=social&label=Follow%20%40HodlmeTight1337)](https://twitter.com/HodlmeTight1337) or [nostr](https://njump.me/npub1ch25m5lkk8kfepr63f0jnpd9te8l9f585pfpr2g2ma4pre9rmlrqlu0yjy), perhaps even donating some sats to [hakuna@getalby.com](https://getalby.com/p/hakuna)
 
 I'm also always grateful for incoming channels to my node: [HODLmeTight](https://amboss.space/node/037f66e84e38fc2787d578599dfe1fcb7b71f9de4fb1e453c5ab85c05f5ce8c2e3)
 
